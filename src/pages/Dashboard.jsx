@@ -12,6 +12,10 @@ import { usePagination } from "../provider/paginationProvider";
 import Loading from "../components/Loading";
 import { Link } from "react-router-dom";
 import { useAuth } from "../provider/AuthProvider";
+import { FiArrowRight, FiCheckCircle, FiFileText, FiGrid, FiHeart, FiLayers, FiPlus, FiShield, FiZap } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { hasDownloadAccess } from "../services/payments";
+import "../css/dashboard.css";
 
 
 
@@ -31,8 +35,12 @@ const Dashboard = () => {
     closePreviewModal,
     isLoading,
     isPreviewShow,
-    error } = useDashboard()
+    error,
+    resumes } = useDashboard()
   const { user } = useAuth()
+  const [hasPremium, setHasPremium] = useState(false)
+
+  useEffect(() => { hasDownloadAccess().then(setHasPremium).catch(() => setHasPremium(false)) }, [])
   const {
     PaginationButtons,
   } = usePagination()
@@ -49,22 +57,53 @@ if(isLoading) {
     </div></Container>
   }
 
+  const firstName = user?.name?.split(" ")?.[0] || user?.email?.split("@")[0] || "there"
+
   return (
-    <Container>
-      <Hspace />{/*add vertical space because navbar is fixed nad its content is overlapped with navbar*/}
-      {/* toots to add,search and sort resumes */}
-      <DashboardHeader />
-      {error && <p className="my-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</p>}
-      {/* resumes table */}
-      <ResumeTable />  
-      {/* pagination buttons */}
-      {/* <Pagination /> */}
-      {PaginationButtons}
+    <div className="dashboard-page">
+      <div className="dashboard-shell">
+        <aside className="workspace-sidebar">
+          <div className="workspace-label">WORKSPACE</div>
+          <Link className="active" to="/dashboard"><FiGrid /> My resumes <span>{resumes.length}</span></Link>
+          <Link to="/templates"><FiLayers /> Templates</Link>
+          <Link to="/pricing"><FiZap /> Plans & access</Link>
+          <div className="sidebar-divider" />
+          <div className="workspace-label">CAREER TRACKS</div>
+          <Link to="/templates"><FiFileText /> Technology</Link>
+          <Link to="/templates"><FiHeart /> Healthcare</Link>
+          <div className="sidebar-plan"><FiShield /><div><span>{hasPremium ? "PREMIUM ACCESS" : "FREE WORKSPACE"}</span><strong>{hasPremium ? "Downloads unlocked" : "Upgrade when ready"}</strong></div></div>
+        </aside>
+
+        <main className="workspace-main">
+          <section className="dashboard-hero">
+            <div><span>RESUAI CAREER WORKSPACE</span><h1>Welcome back, {firstName}</h1><p>Build targeted, ATS-friendly resumes and keep every career version organised in one place.</p></div>
+            <Link to="/templates" className="hero-create"><FiPlus /> Create new resume</Link>
+          </section>
+
+          <section className="dashboard-stats">
+            <article><div className="stat-icon"><FiFileText /></div><div><strong>{resumes.length}</strong><span>Saved resumes</span></div></article>
+            <article><div className="stat-icon success"><FiCheckCircle /></div><div><strong>ATS-ready</strong><span>Professional formatting</span></div></article>
+            <article><div className="stat-icon premium"><FiZap /></div><div><strong>{hasPremium ? "Premium" : "Free"}</strong><span>{hasPremium ? "PDF access active" : "Create and preview"}</span></div></article>
+          </section>
+
+          <section className="career-shortcuts">
+            <Link to="/templates"><div className="shortcut-icon tech">&lt;/&gt;</div><div><span>FOR TECH PROFESSIONALS</span><strong>Build a skills-first tech CV</strong><p>Showcase impact, stack, projects and measurable achievements.</p></div><FiArrowRight /></Link>
+            <Link to="/templates"><div className="shortcut-icon medical"><FiHeart /></div><div><span>FOR MEDICAL PROFESSIONALS</span><strong>Create a credible clinical CV</strong><p>Structure credentials, experience, licensing and patient-care outcomes.</p></div><FiArrowRight /></Link>
+          </section>
+
+          <section className="resume-library">
+            <DashboardHeader />
+            {error && <p className="dashboard-error">{error}</p>}
+            <ResumeTable />
+            {resumes.length > 0 && PaginationButtons}
+          </section>
+        </main>
+      </div>
 
       {isModalShow && <DeleteModal />} {/*show delete modal on button click based on state*/}
       {/* show preview of resume */}
       {isPreviewShow && <ResumePreview closePreviewModal={closePreviewModal} />}
-    </Container>
+    </div>
   );
 };
 
