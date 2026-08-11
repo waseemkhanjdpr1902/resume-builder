@@ -80,6 +80,7 @@ const Footer = () => {
         <FooterLinks>
           <StyledNavLink to="/about">About</StyledNavLink>
           <StyledNavLink to="/privacy">Privacy</StyledNavLink>
+          <StyledNavLink to="/refund-policy">Refunds</StyledNavLink>
           <StyledNavLink to="/contact">Contact</StyledNavLink>
         </FooterLinks>
       </FooterContent>
