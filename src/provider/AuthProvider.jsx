@@ -15,22 +15,23 @@ const AuthProvider = ({ children }) => {
     const getUser = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase.auth.getUser();
+            const { data, error } = await supabase.auth.getSession();
             if (error) {
                 console.error("Error getting user:", error);
                 setUser(null);
                 isAuthenciated = false
                 // navigate("/login")
             }
-            else if (!data?.user) {
+            else if (!data?.session?.user) {
                 setUser(null);
                 isAuthenciated = false;
             } else {
+                const authUser = data.session.user;
                 const user = {
-                    id: data.user.id,
-                    email: data.user.email,
-                    name: data.user?.user_metadata?.name,
-                    picture: data.user?.user_metadata?.picture,
+                    id: authUser.id,
+                    email: authUser.email,
+                    name: authUser?.user_metadata?.name,
+                    picture: authUser?.user_metadata?.picture,
                 };
                 isAuthenciated = true
 
