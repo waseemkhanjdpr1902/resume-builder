@@ -12,6 +12,9 @@ const Nav = () => {
         <li>
           <StyledNavLink to="/templates">Templates</StyledNavLink>
         </li>
+        <li>
+          <StyledNavLink to="/pricing">Pricing</StyledNavLink>
+        </li>
       </ul>
     </nav>
   );
