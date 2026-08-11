@@ -1,7 +1,8 @@
 
 import { useParams } from 'react-router-dom';
 import { useLayout } from '../provider/layoutProvider';
-import { Button, H3 } from './CustomComponents'
+import { Button } from './CustomComponents'
+import { FiUploadCloud } from 'react-icons/fi';
 
 const UploadResumeCard = ({ children }) => {
 
@@ -10,7 +11,7 @@ const UploadResumeCard = ({ children }) => {
 
     return (
         <>
-            <div className="mx-auto my-3 text-center flex flex-col items-center ">
+            <div className="resume-import-card">
                 <input
                     type="file"
                     hidden
@@ -20,8 +21,9 @@ const UploadResumeCard = ({ children }) => {
                     data-layout-id={layout_id || ""}
                     onChange={handleFileChange}
                 />
-                <H3 text-align="center" >Already have a resume? Upload it below and we'll help you create a new one.</H3>
-                <Button onClick={handleFilePick}>Upload Resume</Button>
+                <div className="import-icon"><FiUploadCloud /></div>
+                <div><strong>Speed things up with your current CV</strong><p>Upload a PDF and we’ll extract the details into this template.</p></div>
+                <Button onClick={handleFilePick}>Import PDF</Button>
             </div>
             {children}
         </>
