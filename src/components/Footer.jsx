@@ -72,9 +72,9 @@ const Footer = () => {
     <FooterWrapper>
       <FooterContent>
         <div>
-          <Title>Resume Builder</Title>
+          <Title>ResuAIBuilder</Title>
           <Paragraph>
-            &copy; {new Date().getFullYear()} Resume Builder. All rights reserved.
+            &copy; {new Date().getFullYear()} ResuAIBuilder. All rights reserved.
           </Paragraph>
         </div>
         <FooterLinks>

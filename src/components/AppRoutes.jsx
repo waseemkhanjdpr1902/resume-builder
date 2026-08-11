@@ -15,6 +15,7 @@ import { ClassicalLayoutWithProvider, CreativeLayoutWithProvider, ModernLayoutWi
 import Login from "../pages/Login";
 import LayoutProvider from "../provider/layoutProvider";
 import RedirectMessagePage from "../pages/RedirectMessagePage";
+import Pricing from "../pages/Pricing";
 
 
 const AppRoutes = () => {
@@ -33,6 +34,7 @@ const AppRoutes = () => {
                 <Route exact path="creative" element={<CreativeLayoutWithProvider />} />
             </Route>
             <Route exact path="/login" element={<Login />} />
+            <Route exact path="/pricing" element={<Pricing />} />
             <Route exact path="/redirecting" element={<RedirectMessagePage />} />
             <Route exact path="/contact" element={<Contact />}></Route>
             <Route exact path="/privacy" element={<Privacy />}></Route>
