@@ -22,10 +22,10 @@ const AuthProvider = ({ children }) => {
                 isAuthenciated = false
                 // navigate("/login")
             }
-            else if (data?.session === null) {
-                alert("Please check your email to confirm your account.");
-            }
-            else {
+            else if (!data?.user) {
+                setUser(null);
+                isAuthenciated = false;
+            } else {
                 const user = {
                     id: data.user.id,
                     email: data.user.email,
