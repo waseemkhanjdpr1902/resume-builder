@@ -152,6 +152,9 @@ const ResumeTable = () => {
                     </tr>
                 </thead>
                 <tbody>
+                    {currentReumes.length === 0 && <tr><StyledTD colSpan="5" padding="40px 20px">
+                        <strong>No saved CVs yet.</strong><div style={{ marginTop: 8 }}>Choose a professional template to create your first CV.</div>
+                    </StyledTD></tr>}
                     {
                         //if there is filtered resume show it otherwise all resume
                         currentReumes.slice((currentPage - 1) * itemPerPage, currentPage * itemPerPage).map((resume, index) => (
