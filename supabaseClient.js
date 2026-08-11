@@ -26,6 +26,7 @@ const createUnavailableQuery = () => {
 const unavailableClient = {
   auth: {
     getUser: async () => ({ data: { user: null }, error: null }),
+    getSession: async () => ({ data: { session: null }, error: null }),
     signOut: async () => ({ error: null }),
     signInWithOAuth: async () => ({ data: null, error: configurationError }),
     signInWithOtp: async () => ({ data: null, error: configurationError }),
