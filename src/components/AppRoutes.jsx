@@ -16,6 +16,7 @@ import Login from "../pages/Login";
 import LayoutProvider from "../provider/layoutProvider";
 import RedirectMessagePage from "../pages/RedirectMessagePage";
 import Pricing from "../pages/Pricing";
+import RefundPolicy from "../pages/RefundPolicy";
 
 
 const AppRoutes = () => {
@@ -35,6 +36,7 @@ const AppRoutes = () => {
             </Route>
             <Route exact path="/login" element={<Login />} />
             <Route exact path="/pricing" element={<Pricing />} />
+            <Route exact path="/refund-policy" element={<RefundPolicy />} />
             <Route exact path="/redirecting" element={<RedirectMessagePage />} />
             <Route exact path="/contact" element={<Contact />}></Route>
             <Route exact path="/privacy" element={<Privacy />}></Route>
