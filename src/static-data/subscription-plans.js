@@ -1,20 +1,6 @@
 export const subscriptionPlans = [
-  {
-    id: "free", name: "Starter", eyebrow: "EXPLORE", monthly: 0, yearly: 0,
-    description: "Create a professional resume and experience the core builder.",
-    features: ["1 active resume", "ATS-safe starter templates", "PDF export", "Core resume sections"],
-    cta: "Start free", href: "/templates",
-  },
-  {
-    id: "pro", name: "Career Pro", eyebrow: "BEST VALUE", monthly: 499, yearly: 3999, featured: true,
-    description: "For active job seekers who want stronger applications and unlimited creation.",
-    features: ["Unlimited resumes", "All Tech, Medical & professional templates", "ATS score and improvement guidance", "JD keyword matching", "Cover letters", "Priority PDF & future DOCX exports"],
-    cta: "Upgrade to Career Pro",
-  },
-  {
-    id: "expert", name: "Expert Makeover", eyebrow: "HUMAN + AI", oneTime: 2999,
-    description: "A professionally reviewed resume for an important career move.",
-    features: ["Everything in Career Pro", "Expert resume review", "ATS-focused content rewrite", "One tailored cover letter", "LinkedIn profile recommendations", "30-day revision support"],
-    cta: "Request expert makeover",
-  },
+  { id: "free", name: "Free Builder", eyebrow: "CREATE FREE", price: 0, suffix: "to build", description: "Create, edit and preview one professional CV before choosing access.", features: ["1 active CV", "Professional Tech & Medical templates", "Full editor and live preview", "Payment required for PDF download"], cta: "Create my free CV", href: "/templates" },
+  { id: "monthly", name: "30-Day Access", eyebrow: "QUICK JOB SEARCH", price: 299, suffix: "30 days", description: "Download and improve your CV throughout an active job search.", features: ["Professional PDF downloads", "Unlimited edits for 30 days", "All career templates", "Future ATS improvement tools"], cta: "Get 30-day access" },
+  { id: "annual", name: "Annual Access", eyebrow: "MOST POPULAR", price: 599, suffix: "365 days", description: "The best-value option for career growth and multiple applications.", features: ["Everything in 30-Day Access", "Unlimited CV versions for one year", "Tech and Medical career tools", "Future JD matching and cover letters"], cta: "Get annual access", featured: true },
+  { id: "lifetime", name: "Lifetime Access", eyebrow: "PAY ONCE", price: 999, suffix: "lifetime", description: "Keep access to ResuAIBuilder without another access payment.", features: ["Everything in Annual Access", "Lifetime PDF downloads", "All future professional templates", "Lifetime builder access for this account"], cta: "Get lifetime access" },
 ];
