@@ -48,7 +48,10 @@ const GeneratePageFixedButtons = memo(({ setShowIcons, showIcons, setIsTemplateC
 
             console.log("sectionNames", sectionNames, "sectionProps", sectionProps, "layoutStyle", layoutStyle);
           
-            await createPDF(sections, layoutStyle, sectionProps)
+            const file = await createPDF(sections, layoutStyle, sectionProps)
+            if (file) {
+                await uploadFile(file, setProgress)
+            }
             setFileGenerating(false)
             // await uploadFile(file, (progressValue) => {
             //     setProgress(progressValue);
@@ -140,7 +143,7 @@ const GeneratePageFixedButtons = memo(({ setShowIcons, showIcons, setIsTemplateC
                 )}
 
             </FixedIconWrapper>
-            {fileGenerating && <ProgressBarModal peogress={progress} onClose={setFileGenerating(false)} />}
+            {fileGenerating && <ProgressBarModal progress={progress} onClose={() => setFileGenerating(false)} />}
             {isDividerChangeModelOpen && dividerChooseModal}
             {isPaywallOpen && <DownloadPaywall onClose={() => setIsPaywallOpen(false)} onPaid={handlePaidDownload} />}
 
