@@ -1,3 +1,5 @@
+import supabase from "../../supabaseClient";
+
 const ACCESS_KEY = "resuaibuilder_access";
 
 const loadRazorpay = () => new Promise(resolve => {
@@ -10,15 +12,18 @@ const loadRazorpay = () => new Promise(resolve => {
 });
 
 const requestJson = async (url, body) => {
-  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+  if (!accessToken) throw new Error("Please sign in to continue");
+  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(body) });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "Payment request failed");
   return data;
 };
 
-export async function startPayment(planId, onSuccess, userId) {
+export async function startPayment(planId, onSuccess) {
   if (!(await loadRazorpay())) throw new Error("Secure checkout could not be loaded. Please check your connection.");
-  const order = await requestJson("/api/create-order", { planId, userId });
+  const order = await requestJson("/api/create-order", { planId });
   return new Promise((resolve, reject) => {
     const checkout = new window.Razorpay({
       key: order.keyId, amount: order.amount, currency: order.currency, order_id: order.orderId,
@@ -26,7 +31,7 @@ export async function startPayment(planId, onSuccess, userId) {
       theme: { color: "#0f766e" },
       handler: async payment => {
         try {
-          const verified = await requestJson("/api/verify-payment", { ...payment, planId, userId });
+          const verified = await requestJson("/api/verify-payment", payment);
           localStorage.setItem(ACCESS_KEY, verified.token);
           await onSuccess?.(verified);
           resolve(verified);
@@ -39,11 +44,11 @@ export async function startPayment(planId, onSuccess, userId) {
   });
 }
 
-export async function hasDownloadAccess(userId) {
+export async function hasDownloadAccess() {
   const token = localStorage.getItem(ACCESS_KEY);
   if (!token) return false;
   try {
-    const result = await requestJson("/api/check-access", { token, userId });
+    const result = await requestJson("/api/check-access", { token });
     if (!result.active) localStorage.removeItem(ACCESS_KEY);
     return result.active;
   } catch { return false; }
