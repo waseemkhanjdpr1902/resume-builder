@@ -1,58 +1,17 @@
-import classicExecutive from "../assets/layout-images/classic/classic_layout_1.png";
-import classicClinical from "../assets/layout-images/classic/classic_resume_4.png";
-import modernEngineer from "../assets/layout-images/modern/modern_layout_2.png";
-import modernProduct from "../assets/layout-images/modern/modern_layout_6.png";
-import simpleMedical from "../assets/layout-images/simple/simple_layout_3.png";
-import simpleUniversal from "../assets/layout-images/simple/simple_layout_4.png";
-
-export const careerTracks = [
-  { id: "all", label: "All careers" },
-  { id: "technology", label: "Technology" },
-  { id: "healthcare", label: "Healthcare" },
-  { id: "business", label: "Business & leadership" },
+export const healthcareTracks = [
+  { id: "all", label: "All healthcare roles" },
+  { id: "nursing", label: "Nursing" },
+  { id: "medical", label: "Doctors" },
+  { id: "allied", label: "Allied health" },
+  { id: "pharmacy", label: "Pharmacy" },
+  { id: "leadership", label: "Healthcare leadership" },
 ];
 
 export const professionalTemplates = [
-  {
-    id: "tech-core", name: "Tech Core", track: "technology", image: simpleUniversal,
-    layoutType: "simple", layoutId: 4, ats: "Excellent", format: "Single column", level: "All levels",
-    roles: ["Software Engineer", "DevOps", "Cybersecurity"],
-    description: "A parsing-first structure for technical experience, measurable impact, skills and projects.",
-    strengths: ["Clean skill taxonomy", "Project-friendly", "No parsing-risk sidebar"], featured: true,
-  },
-  {
-    id: "engineering-impact", name: "Engineering Impact", track: "technology", image: modernEngineer,
-    layoutType: "modern", layoutId: 2, ats: "Strong", format: "Compact", level: "Mid–senior",
-    roles: ["Full-stack", "Data Engineer", "Engineering Lead"],
-    description: "A compact professional layout for engineers with deep project and delivery experience.",
-    strengths: ["Impact-led experience", "Dense but readable", "Modern hierarchy"],
-  },
-  {
-    id: "product-leader", name: "Product & Data Leader", track: "technology", image: modernProduct,
-    layoutType: "modern", layoutId: 6, ats: "Strong", format: "Executive compact", level: "Senior",
-    roles: ["Product Manager", "Data Scientist", "Technology Head"],
-    description: "Balances leadership outcomes, strategic initiatives and technical credibility.",
-    strengths: ["Leadership narrative", "Metrics-forward", "Executive presence"],
-  },
-  {
-    id: "clinical-core", name: "Clinical Professional", track: "healthcare", image: classicClinical,
-    layoutType: "classical", layoutId: 4, ats: "Excellent", format: "Single column", level: "All levels",
-    roles: ["Doctor", "Registered Nurse", "Pharmacist"],
-    description: "A credential-first clinical resume for licensure, patient-care experience and specialities.",
-    strengths: ["Credential visibility", "Clinical experience focus", "ATS-safe chronology"], featured: true,
-  },
-  {
-    id: "medical-specialist", name: "Medical Specialist", track: "healthcare", image: simpleMedical,
-    layoutType: "simple", layoutId: 3, ats: "Excellent", format: "Refined single column", level: "Experienced",
-    roles: ["Specialist Doctor", "Clinical Research", "Healthcare Manager"],
-    description: "Built for advanced qualifications, specialist practice, research and professional training.",
-    strengths: ["Qualifications first", "Research-ready", "Formal clinical tone"],
-  },
-  {
-    id: "leadership-classic", name: "Leadership Classic", track: "business", image: classicExecutive,
-    layoutType: "classical", layoutId: 1, ats: "Excellent", format: "Executive single column", level: "Mid–executive",
-    roles: ["Operations", "Finance", "Customer Experience"],
-    description: "A confident, conservative design for business leadership and client-facing careers.",
-    strengths: ["Outcome-led summary", "Clear progression", "Boardroom-ready"],
-  },
+  { id: "nursing-clinical", name: "Clinical Nurse", track: "nursing", layoutType: "classical", layoutId: 4, ats: "Excellent", format: "Single column", level: "All levels", featured: true, accent: "#087f75", roles: ["Registered Nurse", "ICU Nurse", "Staff Nurse"], sample: { name: "Amelia Joseph, RN", title: "Registered Nurse · Critical Care", credentials: "NMC PIN · BLS · ACLS", skills: "Patient assessment · Medication safety · Clinical documentation", role: "ICU Staff Nurse" }, description: "Credential-first layout for bedside nurses, specialist units and international applications.", strengths: ["Licence and registration prominent", "Clinical competencies grouped", "ATS-safe chronology"] },
+  { id: "doctor-specialist", name: "Medical Specialist", track: "medical", layoutType: "simple", layoutId: 3, ats: "Excellent", format: "Refined single column", level: "Experienced", accent: "#245b8f", roles: ["Specialist Doctor", "General Physician", "Surgeon"], sample: { name: "Dr. Daniel Ahmed", title: "Consultant Physician · Internal Medicine", credentials: "MBBS · MD · Medical Registration", skills: "Diagnosis · Acute care · Clinical governance", role: "Consultant Physician" }, description: "A formal medical CV for specialist practice, procedures, research and clinical appointments.", strengths: ["Qualifications-first hierarchy", "Research and CPD ready", "Hospital-friendly structure"] },
+  { id: "allied-health", name: "Allied Health", track: "allied", layoutType: "simple", layoutId: 4, ats: "Excellent", format: "Clean single column", level: "All levels", accent: "#6c4f9b", roles: ["Physiotherapist", "Radiographer", "Lab Technologist"], sample: { name: "Sofia Mathew", title: "Senior Physiotherapist", credentials: "BPT · HCPC Registration", skills: "Rehabilitation · Mobility assessment · Care planning", role: "Senior Physiotherapist" }, description: "Flexible structure for therapy, diagnostic, laboratory and rehabilitation professionals.", strengths: ["Modality and equipment skills", "Patient outcomes focus", "Registration clearly shown"] },
+  { id: "pharmacy-practice", name: "Pharmacy Practice", track: "pharmacy", layoutType: "modern", layoutId: 2, ats: "Strong", format: "Compact clinical", level: "All levels", accent: "#a05b22", roles: ["Clinical Pharmacist", "Hospital Pharmacist", "Pharmacy Technician"], sample: { name: "Noah George, PharmD", title: "Clinical Pharmacist", credentials: "PharmD · Licensed Pharmacist", skills: "Medication review · Dispensing · Patient counselling", role: "Hospital Pharmacist" }, description: "Designed for medication expertise, hospital workflows, licensing and patient counselling.", strengths: ["Medication-safety emphasis", "Systems and formulary skills", "Clear licence placement"] },
+  { id: "healthcare-leader", name: "Healthcare Leader", track: "leadership", layoutType: "classical", layoutId: 1, ats: "Excellent", format: "Executive single column", level: "Senior", accent: "#155e75", roles: ["Nurse Manager", "Hospital Administrator", "Quality Manager"], sample: { name: "Maya Fernandes", title: "Hospital Operations Manager", credentials: "MHA · CPHQ", skills: "Clinical operations · Quality systems · Patient experience", role: "Hospital Operations Manager" }, description: "Executive healthcare format for service delivery, quality, accreditation and team leadership.", strengths: ["Leadership impact visible", "Quality metrics ready", "Governance-focused narrative"] },
+  { id: "early-career-clinical", name: "Clinical Graduate", track: "allied", layoutType: "classical", layoutId: 3, ats: "Excellent", format: "Skills-first single column", level: "Graduate", accent: "#39735d", roles: ["New Graduate Nurse", "Medical Intern", "Clinical Trainee"], sample: { name: "Aisha Khan", title: "Graduate Healthcare Professional", credentials: "BSc Nursing · BLS", skills: "Clinical placement · Patient safety · Team collaboration", role: "Graduate Staff Nurse" }, description: "A focused starting point for graduates with clinical placements, training and transferable skills.", strengths: ["Placements treated as experience", "Education and skills prioritised", "No empty-looking sections"] },
 ];
