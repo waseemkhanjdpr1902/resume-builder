@@ -10,7 +10,7 @@ import "../css/ats-report.css";
 const scoreLabels = { atsReadability: "ATS readability", jobMatch: "JD match", clinicalRelevance: "Clinical relevance", credentialMatch: "Licence match", achievementStrength: "Achievement strength", profileCompleteness: "Completeness" };
 const emptyArray = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
 const normaliseDraft = (draft) => ({
-  personalDetails: { name: draft.personalDetails?.name || "", email: draft.personalDetails?.email || "", phone: draft.personalDetails?.phone || "", profession: draft.personalDetails?.profession || draft.detectedRole || "Healthcare Professional", address: draft.personalDetails?.address || "", profile: draft.summary || draft.personalDetails?.profile || "", urls: emptyArray(draft.personalDetails?.urls).length ? draft.personalDetails.urls : [{ value: "" }] },
+  personalDetails: { name: draft.personalDetails?.name || "", email: draft.personalDetails?.email || "", phone: draft.personalDetails?.phone || "", profession: draft.personalDetails?.profession || draft.detectedRole || "Healthcare Professional", address: draft.personalDetails?.address || "", profile: [], urls: emptyArray(draft.personalDetails?.urls).length ? draft.personalDetails.urls : [{ value: "" }] },
   summary: draft.summary || "", educations: emptyArray(draft.educations), experiences: emptyArray(draft.experiences), skills: emptyArray(draft.skills), certificates: emptyArray(draft.certificates), trainings: emptyArray(draft.trainings), languages: emptyArray(draft.languages), achievements: emptyArray(draft.achievements),
 });
 
@@ -48,7 +48,7 @@ export default function ATSChecker() {
 
   const updateSummary = (value) => setResult((current) => ({ ...current, improved: { ...current.improved, summary: value } }));
   const updateBullet = (experienceIndex, bulletIndex, value) => setResult((current) => { const improved = structuredClone(current.improved); improved.experiences[experienceIndex].achievements[bulletIndex].value = value; return { ...current, improved }; });
-  const buildInTemplate = () => { sessionStorage.setItem("resuai_improved_cv", JSON.stringify(normaliseDraft(result.improved))); navigate("/templates"); };
+  const buildInTemplate = () => { sessionStorage.setItem("resuai_improved_cv", JSON.stringify(normaliseDraft(result.improved))); sessionStorage.setItem("resuai_ai_completed", "true"); navigate("/templates"); };
 
   return <main className="tool-page ats-ai-page">
     <section className="tool-hero"><span>AI HEALTHCARE CV OPTIMISER</span><h1>Upload your CV. Let AI build the improved version.</h1><p>No long form to complete. We read your existing PDF or DOCX, preserve your verified facts and create an editable, ATS-friendly healthcare CV.</p></section>
