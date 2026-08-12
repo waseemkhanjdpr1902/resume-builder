@@ -48,6 +48,9 @@ const GenerateResume = () => {
   useLoadSavedData();
   useAutoSaveWithDiff(AUTOSAVE_INTERVAL);
   useHideOnScroll(setShowIcons)
+  useEffect(() => {
+    if (isAIGenerated) sessionStorage.removeItem("resuai_ai_completed");
+  }, [isAIGenerated]);
 
   const handleShowIcon = useCallback(() => {
     setShowIcons((prev) => !prev)
