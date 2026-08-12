@@ -249,9 +249,14 @@ const Login = () => {
   //login with google
 
   const handleLoginWithGoogle = async () => {
+    setSubmitting(true)
     setFeedback(null)
-    const response = await loginWithGoogle()
-    if (response?.status === "error") setFeedback(response)
+    try {
+      const response = await loginWithGoogle()
+      if (response?.status === "error") setFeedback(response)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
 
@@ -272,9 +277,9 @@ const Login = () => {
       <Wrapper>
         <Card>
           <Title>{isCreatingAccount ? "Create your account" : "Welcome back"}</Title>
-          <GoogleLoginButton onClick={handleLoginWithGoogle}>
+          <GoogleLoginButton type="button" onClick={handleLoginWithGoogle} disabled={submitting}>
             <img src={google_icon} alt="google icon" />
-            <span>Continue With Google</span>
+            <span>{submitting ? "Connecting to Google..." : "Continue With Google"}</span>
           </GoogleLoginButton>
           <ButtonGroup>
             <ModeButton selected={selected === modes.EMAIL_PASSWORD} onClick={() => handleModeSelect(modes.EMAIL_PASSWORD)}>
