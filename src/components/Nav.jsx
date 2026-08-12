@@ -4,8 +4,8 @@ import { StyledNavLink } from "./CustomComponents";
 
 const Nav = () => {
   return (
-    <nav className="w-full">
-      <ul className="flex space-x-8 text-white sm:font-sm">
+    <nav className="primary-nav" aria-label="Primary navigation">
+      <ul>
         <li>
           <StyledNavLink to="/dashboard">Dashboard</StyledNavLink>
         </li>
