@@ -13,7 +13,7 @@ import DifferentLayoutHolder from "../components/DifferentLayoutHolder";
 import useHideOnScroll from "../helper/hooks/useHideOnScroll";
 import UploadResumeCard from "../components/UploadResumeCard";
 import { Link, useParams } from "react-router-dom";
-import { FiArrowLeft, FiCheckCircle, FiShield } from "react-icons/fi";
+import { FiArrowLeft, FiCheckCircle, FiEdit3, FiShield } from "react-icons/fi";
 import "../css/resume-editor.css";
 
 const MainWrapper = styled.section`
@@ -39,6 +39,8 @@ const ResponsiveGrid = styled.div.withConfig({ shouldForwardProp: (prop) => !['i
 const GenerateResume = () => {
   const [showIcons, setShowIcons] = useState(false);
   const [isTemplateChangeModelOpen, setIsTemplateChangeModelOpen] = useState(false);
+  const [isAIGenerated] = useState(() => sessionStorage.getItem("resuai_ai_completed") === "true");
+  const [showEditor, setShowEditor] = useState(() => sessionStorage.getItem("resuai_ai_completed") !== "true");
   const { isSavedLoaded } = useLayout();
   const { layout_type, layout_id } = useParams();
   const AUTOSAVE_INTERVAL = 1000 * 60;
@@ -68,8 +70,8 @@ const GenerateResume = () => {
             <div>
               <Link to="/templates" className="studio-back"><FiArrowLeft /> All templates</Link>
               <span className="studio-eyebrow">HEALTHCARE CV STUDIO</span>
-              <h1>Build a CV healthcare recruiters can trust</h1>
-              <p>Show your credentials, clinical competence and patient-care impact while your ATS-friendly document updates alongside you.</p>
+              <h1>{isAIGenerated ? "Your AI-improved healthcare CV is ready" : "Build a CV healthcare recruiters can trust"}</h1>
+              <p>{isAIGenerated ? "AI has populated this template from your uploaded CV. Review the finished document and edit only if you want to make a correction." : "Show your credentials, clinical competence and patient-care impact while your ATS-friendly document updates alongside you."}</p>
             </div>
             <div className="studio-meta">
               <span><FiCheckCircle /> Autosave enabled</span>
@@ -78,14 +80,14 @@ const GenerateResume = () => {
             </div>
           </header>
           <div className="studio-progress" aria-label="Resume workflow">
-            <span className="active"><b>1</b> Add details</span><i></i><span><b>2</b> Review</span><i></i><span><b>3</b> Download</span>
+            <span className={isAIGenerated ? "" : "active"}><b>1</b> {isAIGenerated ? "AI completed" : "Add details"}</span><i></i><span className={isAIGenerated ? "active" : ""}><b>2</b> Review</span><i></i><span><b>3</b> Download</span>
           </div>
-          <UploadResumeCard />
-          <ResponsiveGrid isOpen={isTemplateChangeModelOpen}>
+          {!isAIGenerated ? <UploadResumeCard /> : <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Complete CV generated from your upload</strong><small>Review all facts before downloading.</small></span></div><button type="button" onClick={() => setShowEditor(value => !value)}><FiEdit3/>{showEditor ? "Hide details" : "Edit any detail"}</button></div>}
+          <ResponsiveGrid className={!showEditor ? "preview-only" : ""} isOpen={isTemplateChangeModelOpen}>
           {/* {
             !isTemplateChangeModelOpen  && <LayoutInputField />
           } */}
-          <LayoutInputField />
+          {showEditor ? <LayoutInputField /> : null}
           <LayoutPreview />
           </ResponsiveGrid>
         </div>
