@@ -35,8 +35,11 @@ export const secureJsonPost = (request, response, maxBytes = 64_000) => {
 
 export const requireUser = async (request, response) => {
   const token = bearerToken(request);
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  // Verifying a bearer token does not require elevated database privileges.
+  // Prefer the service role when configured, otherwise use the same public anon
+  // key that Supabase Auth supports in the browser.
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) {
     response.status(503).json({ error: "Account verification is unavailable" });
     return null;
