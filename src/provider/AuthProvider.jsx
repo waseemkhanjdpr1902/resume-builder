@@ -2,6 +2,7 @@ import { createContext, use, useContext, useEffect, useMemo, useState } from "re
 import supabase from "../../supabaseClient";
 import { useLocation, useNavigate } from "react-router-dom";
 const AuthContext = createContext()
+const OAUTH_REDIRECT_KEY = "resuai_oauth_redirect";
 
 const getRedirectPath = (search) => {
     const requestedPath = new URLSearchParams(search).get("redirectTo");
@@ -61,13 +62,18 @@ const AuthProvider = ({ children }) => {
     const loginWithGoogle = async () => {
         try {
             const redirectPath = getRedirectPath(location.search);
+            sessionStorage.setItem(OAUTH_REDIRECT_KEY, redirectPath);
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}${redirectPath}`,
+                    redirectTo: `${window.location.origin}/login`,
+                    queryParams: {
+                        prompt: "select_account",
+                    },
                 },
             })
             if (error) {
+                sessionStorage.removeItem(OAUTH_REDIRECT_KEY);
                 console.error("OAuth Login Error: ", error);
                 return { status: "error", message: error.message };
             }
@@ -135,6 +141,11 @@ const AuthProvider = ({ children }) => {
         const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
                 getUser();
+                if (event === "SIGNED_IN" && location.pathname === "/login") {
+                    const redirectPath = sessionStorage.getItem(OAUTH_REDIRECT_KEY) || getRedirectPath(location.search);
+                    sessionStorage.removeItem(OAUTH_REDIRECT_KEY);
+                    navigate(redirectPath, { replace: true });
+                }
             } else {
                 setUser(null);
             }
