@@ -3,9 +3,9 @@ import PaymentButton from "./PaymentButton";
 import { Link } from "react-router-dom";
 
 const choices = [
-  { id: "monthly", name: "30 days", price: "₹299", note: "Best for one job search" },
-  { id: "annual", name: "Annual", price: "₹599", note: "Best value", featured: true },
-  { id: "lifetime", name: "Lifetime", price: "₹999", note: "Pay once, use forever" },
+  { id: "monthly", name: "Monthly", price: "₹199", note: "Best for one job search" },
+  { id: "annual", name: "Annual", price: "₹999", note: "Best value", featured: true },
+  { id: "lifetime", name: "Lifetime", price: "₹2,499", note: "Founding one-time offer" },
 ];
 
 export default function DownloadPaywall({ onClose, onPaid }) {

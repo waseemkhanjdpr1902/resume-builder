@@ -17,6 +17,11 @@ import LayoutProvider from "../provider/layoutProvider";
 import RedirectMessagePage from "../pages/RedirectMessagePage";
 import Pricing from "../pages/Pricing";
 import RefundPolicy from "../pages/RefundPolicy";
+import CoverLetter from "../pages/CoverLetter";
+import HealthcareGuide from "../pages/HealthcareGuide";
+import ATSChecker from "../pages/ATSChecker";
+import HealthcareOnboarding from "../pages/HealthcareOnboarding";
+import AIAssistant from "../pages/AIAssistant";
 
 
 const AppRoutes = () => {
@@ -36,6 +41,11 @@ const AppRoutes = () => {
             </Route>
             <Route exact path="/login" element={<Login />} />
             <Route exact path="/pricing" element={<Pricing />} />
+            <Route exact path="/cover-letter" element={<CoverLetter />} />
+            <Route exact path="/healthcare-guide" element={<HealthcareGuide />} />
+            <Route exact path="/ats-checker" element={<ATSChecker />} />
+            <Route exact path="/get-started" element={<HealthcareOnboarding />} />
+            <Route exact path="/ai-assistant" element={<AIAssistant />} />
             <Route exact path="/refund-policy" element={<RefundPolicy />} />
             <Route exact path="/redirecting" element={<RedirectMessagePage />} />
             <Route exact path="/contact" element={<Contact />}></Route>

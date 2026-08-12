@@ -67,9 +67,9 @@ const GenerateResume = () => {
           <header className="studio-header">
             <div>
               <Link to="/templates" className="studio-back"><FiArrowLeft /> All templates</Link>
-              <span className="studio-eyebrow">AI RESUME STUDIO</span>
-              <h1>Build a resume recruiters can read</h1>
-              <p>Complete each section while your ATS-friendly document updates alongside you.</p>
+              <span className="studio-eyebrow">HEALTHCARE CV STUDIO</span>
+              <h1>Build a CV healthcare recruiters can trust</h1>
+              <p>Show your credentials, clinical competence and patient-care impact while your ATS-friendly document updates alongside you.</p>
             </div>
             <div className="studio-meta">
               <span><FiCheckCircle /> Autosave enabled</span>

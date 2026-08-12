@@ -15,7 +15,7 @@ const Navbar = () => {
       {/* Left Section: Resume Builder Banner */}
       <div className="flex-1 text-left">
         <StyledNavLink isBanner={true}  to="/" className="transition-all text-lg font-bold">
-          ResuAIBuilder
+          ResuAI Healthcare
         </StyledNavLink >
       </div>
 

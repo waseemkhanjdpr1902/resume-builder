@@ -12,7 +12,7 @@ import { usePagination } from "../provider/paginationProvider";
 import Loading from "../components/Loading";
 import { Link } from "react-router-dom";
 import { useAuth } from "../provider/AuthProvider";
-import { FiArrowRight, FiCheckCircle, FiFileText, FiGrid, FiHeart, FiLayers, FiPlus, FiShield, FiZap } from "react-icons/fi";
+import { FiArrowRight, FiCheckCircle, FiFileText, FiGrid, FiHeart, FiLayers, FiPlus, FiSearch, FiShield, FiZap } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { hasDownloadAccess } from "../services/payments";
 import "../css/dashboard.css";
@@ -40,7 +40,7 @@ const Dashboard = () => {
   const { user } = useAuth()
   const [hasPremium, setHasPremium] = useState(false)
 
-  useEffect(() => { hasDownloadAccess().then(setHasPremium).catch(() => setHasPremium(false)) }, [])
+  useEffect(() => { if (user?.id) hasDownloadAccess(user.id).then(setHasPremium).catch(() => setHasPremium(false)) }, [user?.id])
   const {
     PaginationButtons,
   } = usePagination()
@@ -68,15 +68,16 @@ if(isLoading) {
           <Link to="/templates"><FiLayers /> Templates</Link>
           <Link to="/pricing"><FiZap /> Plans & access</Link>
           <div className="sidebar-divider" />
-          <div className="workspace-label">CAREER TRACKS</div>
-          <Link to="/templates"><FiFileText /> Technology</Link>
-          <Link to="/templates"><FiHeart /> Healthcare</Link>
+          <div className="workspace-label">HEALTHCARE TOOLS</div>
+          <Link to="/healthcare-guide"><FiHeart /> CV guidance</Link>
+          <Link to="/cover-letter"><FiFileText /> Cover letter</Link>
+          <Link to="/ats-checker"><FiSearch /> ATS check</Link>
           <div className="sidebar-plan"><FiShield /><div><span>{hasPremium ? "PREMIUM ACCESS" : "FREE WORKSPACE"}</span><strong>{hasPremium ? "Downloads unlocked" : "Upgrade when ready"}</strong></div></div>
         </aside>
 
         <main className="workspace-main">
           <section className="dashboard-hero">
-            <div><span>RESUAI CAREER WORKSPACE</span><h1>Welcome back, {firstName}</h1><p>Build targeted, ATS-friendly resumes and keep every career version organised in one place.</p></div>
+            <div><span>RESUAI HEALTHCARE WORKSPACE</span><h1>Welcome back, {firstName}</h1><p>Build targeted healthcare CVs, check ATS readiness and prepare a tailored cover letter for every vacancy.</p></div>
             <Link to="/templates" className="hero-create"><FiPlus /> Create new resume</Link>
           </section>
 
@@ -87,8 +88,8 @@ if(isLoading) {
           </section>
 
           <section className="career-shortcuts">
-            <Link to="/templates"><div className="shortcut-icon tech">&lt;/&gt;</div><div><span>FOR TECH PROFESSIONALS</span><strong>Build a skills-first tech CV</strong><p>Showcase impact, stack, projects and measurable achievements.</p></div><FiArrowRight /></Link>
-            <Link to="/templates"><div className="shortcut-icon medical"><FiHeart /></div><div><span>FOR MEDICAL PROFESSIONALS</span><strong>Create a credible clinical CV</strong><p>Structure credentials, experience, licensing and patient-care outcomes.</p></div><FiArrowRight /></Link>
+            <Link to="/healthcare-guide"><div className="shortcut-icon tech"><FiHeart /></div><div><span>PROFESSION-SPECIFIC GUIDANCE</span><strong>See what your healthcare CV needs</strong><p>Check competencies, credentials and country-specific expectations.</p></div><FiArrowRight /></Link>
+            <Link to="/cover-letter"><div className="shortcut-icon medical"><FiFileText /></div><div><span>APPLICATION SUPPORT</span><strong>Create a tailored cover letter</strong><p>Connect your clinical evidence with the employer's requirements.</p></div><FiArrowRight /></Link>
           </section>
 
           <section className="resume-library">

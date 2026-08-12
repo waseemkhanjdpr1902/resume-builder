@@ -1,43 +1,35 @@
 import { Link } from "react-router-dom";
-import { FiArrowRight, FiCheck, FiDownload, FiEdit3, FiFileText, FiShield } from "react-icons/fi";
+import { FiArrowRight, FiCheck, FiFileText, FiHeart, FiShield, FiTarget, FiTrendingUp } from "react-icons/fi";
 import "../css/home.css";
+import "../css/healthcare-tools.css";
 
+const professions = ["Doctors", "Nurses", "Pharmacists", "Allied Health", "Medical Technicians", "Healthcare Leaders"];
 const benefits = [
-  { icon: FiFileText, title: "ATS-friendly templates", text: "Clean, recruiter-ready layouts designed to remain readable by applicant tracking systems." },
-  { icon: FiEdit3, title: "Simple guided editor", text: "Build every section step by step, preview changes instantly, and keep your content organized." },
-  { icon: FiDownload, title: "Instant PDF export", text: "Download a polished resume when you are ready and apply with confidence." },
+  { icon: <FiHeart />, title: "Built for healthcare", text: "Role-specific guidance for clinical experience, licences, competencies, research and patient-care outcomes." },
+  { icon: <FiTarget />, title: "Healthcare ATS guidance", text: "Check the keywords and evidence employers expect for your profession and target country." },
+  { icon: <FiFileText />, title: "Matching cover letters", text: "Create a focused cover letter that connects your clinical strengths with each vacancy." },
 ];
 
-const steps = ["Choose a professional template", "Add or import your career details", "Review, refine and download your PDF"];
-
 export default function Home() {
-  return (
-    <main className="landing-page">
-      <section className="hero-section">
-        <div className="hero-copy">
-          <span className="eyebrow">SMARTER RESUMES. STRONGER APPLICATIONS.</span>
-          <h1>Build an ATS-ready resume that gets you noticed.</h1>
-          <p className="hero-lead">ResuAIBuilder helps you turn your experience into a clear, professional resume with guided editing, proven templates and instant PDF export.</p>
-          <div className="hero-actions">
-            <Link className="primary-action" to="/templates">Build my resume <FiArrowRight /></Link>
-            <Link className="secondary-action" to="/templates">Explore templates</Link>
-          </div>
-          <div className="trust-row"><FiShield /> Your resume stays private and securely saved to your account.</div>
-        </div>
-        <div className="hero-preview" aria-label="Sample resume preview">
-          <div className="preview-top"><span>RESUME PREVIEW</span><span className="preview-pill">ATS ready</span></div>
-          <div className="preview-paper">
-            <div className="preview-name">YOUR NAME</div><div className="preview-role">Customer Experience Leader</div><div className="preview-rule" />
-            <div className="preview-grid"><div><b>PROFILE</b><i /><i /><i className="short" /><b>EXPERIENCE</b><i /><i /><i /><i className="short" /></div><div><b>SKILLS</b><i /><i className="short" /><b>EDUCATION</b><i /><i className="short" /></div></div>
-          </div>
-        </div>
-      </section>
-      <section className="benefit-section">
-        <div className="section-heading"><span>EVERYTHING YOU NEED</span><h2>A better resume, without the formatting struggle</h2></div>
-        <div className="benefit-grid">{benefits.map(({ icon: Icon, title, text }) => <article className="benefit-card" key={title}><Icon /><h3>{title}</h3><p>{text}</p></article>)}</div>
-      </section>
-      <section className="steps-section"><div><span className="eyebrow">HOW IT WORKS</span><h2>From blank page to job-ready in three steps.</h2><p>No design skills needed. Focus on your story while ResuAIBuilder handles the presentation.</p></div><ol>{steps.map((step, index) => <li key={step}><span>{index + 1}</span><p>{step}</p><FiCheck /></li>)}</ol></section>
-      <section className="final-cta"><div><span>READY TO APPLY?</span><h2>Your next opportunity deserves your best resume.</h2><p>Start free, choose a template, and build at your own pace.</p></div><Link className="light-action" to="/templates">Create my resume <FiArrowRight /></Link></section>
-    </main>
-  );
+  return <main className="landing-page healthcare-home">
+    <section className="hero-section">
+      <div className="hero-copy">
+        <span className="eyebrow">THE CAREER BUILDER FOR HEALTHCARE PROFESSIONALS</span>
+        <h1>Your clinical experience deserves a stronger CV.</h1>
+        <p className="hero-lead">Build an ATS-friendly healthcare CV and tailored cover letter with guidance for your profession, credentials, target role and country.</p>
+        <div className="hero-actions"><Link className="primary-action" to="/get-started">Build my healthcare CV <FiArrowRight /></Link><Link className="secondary-action" to="/cover-letter">Create a cover letter</Link></div>
+        <div className="trust-row"><FiShield /> Private workspace · ATS-friendly layouts · Secure PDF export</div>
+        <div className="profession-strip">{professions.map(item => <span key={item}>{item}</span>)}</div>
+      </div>
+      <div className="clinical-preview">
+        <div className="clinical-card-head"><span>HEALTHCARE CV CHECK</span><b>86%</b></div>
+        <div className="score-ring">86<span>ATS readiness</span></div>
+        <div className="check-list"><p><FiCheck /> Licence and registration visible</p><p><FiCheck /> Clinical competencies included</p><p><FiCheck /> Patient-care impact demonstrated</p><p className="suggestion"><FiTrendingUp /> Add target-role keywords</p></div>
+        <Link to="/ats-checker">Check my healthcare CV <FiArrowRight /></Link>
+      </div>
+    </section>
+    <section className="benefit-section"><div className="section-heading"><span>MORE THAN A TEMPLATE</span><h2>Guidance that understands healthcare hiring</h2><p>Present trust, competence and measurable impact—not a generic list of duties.</p></div><div className="benefit-grid">{benefits.map(({icon,title,text}) => <article className="benefit-card" key={title}>{icon}<h3>{title}</h3><p>{text}</p></article>)}</div></section>
+    <section className="steps-section"><div><span className="eyebrow">A CLEAR APPLICATION WORKFLOW</span><h2>From experience to interview-ready.</h2><p>Use structured prompts to turn everyday clinical responsibilities into credible evidence.</p></div><ol>{["Select profession, target role and country","Build your CV with healthcare-specific prompts","Check readiness and create a matching cover letter"].map((step,i)=><li key={step}><span>{i+1}</span><p>{step}</p><FiCheck/></li>)}</ol></section>
+    <section className="final-cta"><div><span>START FREE</span><h2>Make your next healthcare application count.</h2><p>Create and preview your CV before paying to download.</p></div><Link className="light-action" to="/get-started">Create my CV <FiArrowRight /></Link></section>
+  </main>;
 }

@@ -10,7 +10,7 @@ export default async function handler(request, response) {
     const expected = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
     if (!signature || expected.length !== signature.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) return response.status(200).json({ active: false });
     const entitlement = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    const active = !entitlement.expiresAt || entitlement.expiresAt > Math.floor(Date.now() / 1000);
+    const active = entitlement.userId === request.body?.userId && (!entitlement.expiresAt || entitlement.expiresAt > Math.floor(Date.now() / 1000));
     return response.status(200).json({ active, planId: entitlement.planId, expiresAt: entitlement.expiresAt });
   } catch {
     return response.status(200).json({ active: false });

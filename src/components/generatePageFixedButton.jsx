@@ -19,6 +19,7 @@ import { getSectionAndSectionprops } from "../helper/helper";
 import { useDirectPDFWriter } from "../provider/DirectPDFWriter";
 import { hasDownloadAccess } from "../services/payments";
 import DownloadPaywall from "./DownloadPaywall";
+import { useAuth } from "../provider/AuthProvider";
 
 
 
@@ -31,6 +32,7 @@ const GeneratePageFixedButtons = memo(({ setShowIcons, showIcons, setIsTemplateC
     const [isPaywallOpen, setIsPaywallOpen] = useState(false)
 
     const { generatePDF, compileInput,liveDetails } = useLayout();
+    const { user } = useAuth();
     const { uploadFile } = useSupabase();
     const { dividers, changeDivider } = useDivider()
     const { layout_type, layout_id } = useParams()
@@ -70,7 +72,7 @@ const GeneratePageFixedButtons = memo(({ setShowIcons, showIcons, setIsTemplateC
         }
     };
     const handleDownloadClick = async () => {
-        if (await hasDownloadAccess()) await uploadAndDownloadFile();
+        if (await hasDownloadAccess(user?.id)) await uploadAndDownloadFile();
         else setIsPaywallOpen(true);
     };
 
