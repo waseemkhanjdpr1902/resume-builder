@@ -6,7 +6,7 @@ Copy .env.example into the relevant Vercel environments. Never expose SUPABASE_S
 
 Required client variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
 
-Required server variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET and RAZORPAY_WEBHOOK_SECRET.
+Required server variables: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET and RAZORPAY_WEBHOOK_SECRET. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for server-side database writes such as payment webhooks; authenticated token checks safely fall back to `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 Configure at least one AI key and set AI_PROVIDER to gemini, openai, or groq. The server automatically tries configured fallbacks.
 
