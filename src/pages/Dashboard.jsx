@@ -40,7 +40,7 @@ const Dashboard = () => {
   const { user } = useAuth()
   const [hasPremium, setHasPremium] = useState(false)
 
-  useEffect(() => { if (user?.id) hasDownloadAccess(user.id).then(setHasPremium).catch(() => setHasPremium(false)) }, [user?.id])
+  useEffect(() => { if (user?.id) hasDownloadAccess().then(setHasPremium).catch(() => setHasPremium(false)) }, [user?.id])
   const {
     PaginationButtons,
   } = usePagination()

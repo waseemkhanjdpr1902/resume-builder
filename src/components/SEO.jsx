@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { seoLandingPages } from "../data/seoLandingPages";
 
 const siteUrl = "https://resume-builder-murex-five.vercel.app";
 const defaultDescription = "Create an ATS-friendly healthcare CV with AI-assisted improvement, nursing and medical templates, job matching and secure PDF export.";
@@ -15,6 +16,7 @@ const pages = {
   "/privacy": { title: "Privacy Policy | ResuAIBuilder", description: "Read how ResuAIBuilder handles account, CV and payment-related information." },
   "/refund-policy": { title: "Refund and Cancellation Policy | ResuAIBuilder", description: "Review ResuAIBuilder subscription, cancellation and refund terms." },
 };
+Object.entries(seoLandingPages).forEach(([path, page]) => { pages[path] = { title: `${page.title} | ResuAIBuilder`, description: page.intro }; });
 const privatePrefixes = ["/dashboard", "/login", "/build-resume", "/redirecting", "/get-started", "/ai-assistant"];
 
 const setMeta = (selector, attributes) => {

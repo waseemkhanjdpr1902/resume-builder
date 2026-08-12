@@ -17,7 +17,7 @@ import FixedIconWrapper from "./FixedIconWrapper";
 import { useParams } from "react-router-dom";
 import { getSectionAndSectionprops } from "../helper/helper";
 import { useDirectPDFWriter } from "../provider/DirectPDFWriter";
-import { hasDownloadAccess } from "../services/payments";
+import { claimFreeDownload, hasDownloadAccess } from "../services/payments";
 import DownloadPaywall from "./DownloadPaywall";
 import { useAuth } from "../provider/AuthProvider";
 
@@ -31,7 +31,7 @@ const GeneratePageFixedButtons = memo(({ setShowIcons, showIcons, setIsTemplateC
     const [isDividerChangeModelOpen, setIsDividerChangeModelOpen] = useState(false)
     const [isPaywallOpen, setIsPaywallOpen] = useState(false)
 
-    const { generatePDF, compileInput,liveDetails } = useLayout();
+    const { compileInput,liveDetails } = useLayout();
     const { user } = useAuth();
     const { uploadFile } = useSupabase();
     const { dividers, changeDivider } = useDivider()
@@ -52,6 +52,9 @@ const GeneratePageFixedButtons = memo(({ setShowIcons, showIcons, setIsTemplateC
           
             const file = await createPDF(sections, layoutStyle, sectionProps)
             if (file) {
+                const url = URL.createObjectURL(file);
+                const link = document.createElement("a"); link.href = url; link.download = file.name; link.click();
+                URL.revokeObjectURL(url);
                 await uploadFile(file, setProgress)
             }
             setFileGenerating(false)
@@ -72,8 +75,13 @@ const GeneratePageFixedButtons = memo(({ setShowIcons, showIcons, setIsTemplateC
         }
     };
     const handleDownloadClick = async () => {
-        if (await hasDownloadAccess(user?.id)) await uploadAndDownloadFile();
-        else setIsPaywallOpen(true);
+        if (!user?.id) { window.location.href = "/login?redirectTo=" + encodeURIComponent(window.location.pathname); return; }
+        if (await hasDownloadAccess()) { await uploadAndDownloadFile(); return; }
+        try {
+            const free = await claimFreeDownload();
+            if (free.granted) await uploadAndDownloadFile();
+            else setIsPaywallOpen(true);
+        } catch { setIsPaywallOpen(true); }
     };
 
     const handlePaidDownload = async () => {

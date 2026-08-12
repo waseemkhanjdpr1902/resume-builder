@@ -22,6 +22,8 @@ import HealthcareGuide from "../pages/HealthcareGuide";
 import ATSChecker from "../pages/ATSChecker";
 import HealthcareOnboarding from "../pages/HealthcareOnboarding";
 import AIAssistant from "../pages/AIAssistant";
+import SEOLandingPage from "../pages/SEOLandingPage";
+import { seoLandingPages } from "../data/seoLandingPages";
 
 
 const AppRoutes = () => {
@@ -51,6 +53,7 @@ const AppRoutes = () => {
             <Route exact path="/contact" element={<Contact />}></Route>
             <Route exact path="/privacy" element={<Privacy />}></Route>
             <Route exact path="/about" element={<About />}></Route>
+            {Object.keys(seoLandingPages).map(path => <Route key={path} exact path={path} element={<SEOLandingPage />} />)}
             <Route exact path="/build-resume/:layout_type/:layout_id" element={
                 <LayoutProvider> <GenerateResume />  </LayoutProvider>
             }></Route>
