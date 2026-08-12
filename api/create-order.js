@@ -3,21 +3,22 @@ const plans = {
   annual: { amount: 99900, label: "Healthcare ResuAIBuilder Annual Pro" },
   lifetime: { amount: 249900, label: "Healthcare ResuAIBuilder Lifetime Pro" },
 };
+import { requireUser, secureJsonPost } from "./_security.js";
 
 export default async function handler(request, response) {
-  if (request.method !== "POST") return response.status(405).json({ error: "Method not allowed" });
+  if (!secureJsonPost(request, response, 8_000)) return;
+  const user = await requireUser(request, response);
+  if (!user) return;
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keyId || !keySecret) return response.status(503).json({ error: "Payments are being configured. Please try again shortly." });
   const plan = plans[request.body?.planId];
   if (!plan) return response.status(400).json({ error: "Invalid plan" });
-  const userId = request.body?.userId;
-  if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(userId || "")) return response.status(400).json({ error: "Sign in before purchasing" });
   try {
     const razorpayResponse = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: { "Authorization": `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: plan.amount, currency: "INR", receipt: `hrai_${Date.now()}`, notes: { planId: request.body.planId, ownerId: userId, product: "Healthcare ResuAIBuilder" } }),
+      body: JSON.stringify({ amount: plan.amount, currency: "INR", receipt: `hrai_${Date.now()}`, notes: { planId: request.body.planId, ownerId: user.id, product: "Healthcare ResuAIBuilder" } }),
     });
     const order = await razorpayResponse.json();
     if (!razorpayResponse.ok) return response.status(502).json({ error: order?.error?.description || "Could not create payment order" });

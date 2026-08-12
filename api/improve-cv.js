@@ -1,3 +1,4 @@
+import { secureJsonPost } from "./_security.js";
 const limits = new Map();
 const clean = (value, max = 50000) => String(value || "").replace(/[<>]/g, "").slice(0, max);
 const rateLimited = (request) => { const key = (request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown").split(",")[0]; const now = Date.now(); const entry = limits.get(key) || { start: now, count: 0 }; if (now - entry.start > 60000) { entry.start = now; entry.count = 0; } entry.count += 1; limits.set(key, entry); return entry.count > 5; };
@@ -23,7 +24,7 @@ const providers = {
 };
 
 export default async function handler(request, response) {
-  if (request.method !== "POST") return response.status(405).json({ error: "Method not allowed" });
+  if (!secureJsonPost(request, response, 80_000)) return;
   if (rateLimited(request)) return response.status(429).json({ error: "Too many requests. Please wait one minute." });
   const { cvText, jobDescription = "", targetCountry = "Global" } = request.body || {};
   if (!cvText || String(cvText).length < 120) return response.status(400).json({ error: "The uploaded CV did not contain enough readable text." });
