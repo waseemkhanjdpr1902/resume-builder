@@ -14,6 +14,8 @@ Configure at least one AI key and set AI_PROVIDER to gemini, openai, or groq. Th
 
 Run supabase/migrations/202608120001_healthcare_platform.sql in a test project first, then production. It creates healthcare profiles, CVs, sections, credentials, job descriptions, ATS analyses, cover letters, applications and subscription records. Row Level Security restricts normal access to auth.uid() = owner_id. Subscription writes remain server-only.
 
+Run `202608120002_private_cv_storage.sql` and `202608120003_free_download.sql` as well. The latter records one free PDF allowance per authenticated account; deploy the migration before enabling the freemium download UI.
+
 In Authentication settings:
 
 1. Add the production URL and Vercel preview pattern to allowed redirect URLs.
