@@ -22,6 +22,8 @@ import HealthcareGuide from "../pages/HealthcareGuide";
 import ATSChecker from "../pages/ATSChecker";
 import HealthcareOnboarding from "../pages/HealthcareOnboarding";
 import AIAssistant from "../pages/AIAssistant";
+import Terms from "../pages/Terms";
+import ChatGPTIntegration from "../pages/ChatGPTIntegration";
 
 
 const AppRoutes = () => {
@@ -47,6 +49,8 @@ const AppRoutes = () => {
             <Route exact path="/get-started" element={<HealthcareOnboarding />} />
             <Route exact path="/ai-assistant" element={<AIAssistant />} />
             <Route exact path="/refund-policy" element={<RefundPolicy />} />
+            <Route exact path="/terms" element={<Terms />} />
+            <Route exact path="/chatgpt-integration" element={<ChatGPTIntegration />} />
             <Route exact path="/redirecting" element={<RedirectMessagePage />} />
             <Route exact path="/contact" element={<Contact />}></Route>
             <Route exact path="/privacy" element={<Privacy />}></Route>
