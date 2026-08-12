@@ -72,6 +72,7 @@ if(isLoading) {
           <Link to="/healthcare-guide"><FiHeart /> CV guidance</Link>
           <Link to="/cover-letter"><FiFileText /> Cover letter</Link>
           <Link to="/ats-checker"><FiSearch /> ATS check</Link>
+          <Link to="/ai-assistant"><FiZap /> AI assistant</Link>
           <div className="sidebar-plan"><FiShield /><div><span>{hasPremium ? "PREMIUM ACCESS" : "FREE WORKSPACE"}</span><strong>{hasPremium ? "Downloads unlocked" : "Upgrade when ready"}</strong></div></div>
         </aside>
 
