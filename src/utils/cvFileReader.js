@@ -16,9 +16,13 @@ export async function readCVFile(file) {
   let text = "";
 
   if (extension === "pdf" || file.type === "application/pdf") {
-    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const [pdfjs, pdfWorker] = await Promise.all([
+      import("pdfjs-dist/legacy/build/pdf.mjs"),
+      import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url"),
+    ]);
+    pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker.default;
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const pdf = await pdfjs.getDocument({ data: bytes, disableWorker: true }).promise;
+    const pdf = await pdfjs.getDocument({ data: bytes }).promise;
     const pages = [];
     for (let pageNumber = 1; pageNumber <= Math.min(pdf.numPages, 15); pageNumber += 1) {
       const page = await pdf.getPage(pageNumber);
