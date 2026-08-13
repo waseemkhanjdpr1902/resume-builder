@@ -19,12 +19,14 @@ function ResumePreview({ template }) {
 }
 
 function TemplateCard({ template }) {
-  const destination = `/build-resume/${template.layoutType}/${template.layoutId}`;
+  const hasAIDraft = Boolean(sessionStorage.getItem("resuai_improved_cv"));
+  const destination = hasAIDraft ? `/build-resume/${template.layoutType}/${template.layoutId}` : "/ats-checker";
+  const actionLabel = hasAIDraft ? "Use this template" : "Upload CV first";
   return <article className="pro-template-card">
     <div className="template-visual">
       {template.featured ? <span className="recommended-badge">Most popular</span> : null}
       <ResumePreview template={template} />
-      <Link className="template-overlay" to={destination}>Use this template <FiArrowRight /></Link>
+      <Link className="template-overlay" to={destination}>{actionLabel} <FiArrowRight /></Link>
     </div>
     <div className="template-details">
       <div className="template-title-row"><div><span className="career-label">{healthcareTracks.find(item => item.id === template.track)?.label}</span><h2>{template.name}</h2></div><span className={`ats-badge ${atsTone[template.ats]}`}><FiShield /> ATS {template.ats}</span></div>
@@ -32,7 +34,7 @@ function TemplateCard({ template }) {
       <div className="template-meta"><span>{template.format}</span><span>{template.level}</span></div>
       <div className="role-tags">{template.roles.map(role => <span key={role}>{role}</span>)}</div>
       <ul className="template-strengths">{template.strengths.map(item => <li key={item}><FiCheck /> {item}</li>)}</ul>
-      <Link className="use-template-button" to={destination}>Build my healthcare CV <FiArrowRight /></Link>
+      <Link className="use-template-button" to={destination}>{hasAIDraft ? "Apply to my AI-improved CV" : "Upload CV for AI analysis"} <FiArrowRight /></Link>
     </div>
   </article>;
 }
