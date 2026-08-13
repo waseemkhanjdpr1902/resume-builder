@@ -6,6 +6,7 @@ import { scoreHealthcareCV } from "../utils/atsScoring";
 import { readCVFile } from "../utils/cvFileReader";
 import "../css/healthcare-tools.css";
 import "../css/ats-report.css";
+import "../css/download-experience.css";
 
 const scoreLabels = { atsReadability: "ATS readability", jobMatch: "JD match", clinicalRelevance: "Clinical relevance", credentialMatch: "Licence match", achievementStrength: "Achievement strength", profileCompleteness: "Completeness" };
 const emptyArray = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
@@ -29,6 +30,8 @@ export default function ATSChecker() {
   const authority = countryGuidance[country]?.authorities?.[0] || "";
   const report = useMemo(() => scoreHealthcareCV({ cvText, jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }), [cvText, jobDescription, role, authority]);
   const improvedReport = useMemo(() => result?.improved ? scoreHealthcareCV({ cvText: JSON.stringify(result.improved), jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }) : null, [result, jobDescription, role, authority]);
+  const potentialScore = improvedReport?.score || report.score;
+  const scoreGain = Math.max(0, potentialScore - report.score);
 
   const chooseFile = async (file) => {
     if (!file) return;
@@ -69,7 +72,7 @@ export default function ATSChecker() {
           <p className="privacy-inline"><FiInfo/>Do not upload patient records, passport numbers or other sensitive identifiers.</p>
         </div>
       </div> : <section className="ai-cv-review">
-        <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}. Review every suggestion before applying it.</p></div><strong>{report.score}/100 current → {improvedReport?.score || report.score}/100 potential</strong></header>
+        <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}. Review every suggestion before applying it.</p></div><div className="score-celebration"><small>Potential ATS lift</small><strong>{report.score} → {potentialScore}</strong><span>+{scoreGain} points</span></div></header>
         <div className="review-columns"><div className="improved-content"><label>Professional summary<textarea value={result.improved.summary || ""} onChange={(event) => updateSummary(event.target.value)}/></label>{emptyArray(result.improved.experiences).map((experience, experienceIndex) => <article key={`${experience.company_name}-${experienceIndex}`}><h3>{experience.position}</h3><p>{experience.company_name} · {experience.start_date}–{experience.end_date}</p>{emptyArray(experience.achievements).map((bullet, bulletIndex) => <textarea aria-label={`Experience bullet ${bulletIndex + 1}`} key={bulletIndex} value={bullet.value || ""} onChange={(event) => updateBullet(experienceIndex, bulletIndex, event.target.value)}/>)}</article>)}</div>
         <aside><h3>What AI improved</h3><ul>{emptyArray(result.improved.improvements).map((item) => <li key={item}><FiCheckCircle/>{item}</li>)}</ul><h3>Information still needed</h3><ul>{emptyArray(result.improved.missingInformation).map((item) => <li key={item}><FiAlertCircle/>{item}</li>)}</ul><label className="verification-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)}/><span>I have checked the names, dates, qualifications, licences and clinical claims.</span></label><button type="button" disabled={!confirmed} onClick={buildInTemplate}>Choose template & build CV <FiArrowRight/></button><button className="start-over" type="button" onClick={() => { setResult(null); setStage("ready"); setConfirmed(false); }}>Start again</button></aside></div>
       </section>}
