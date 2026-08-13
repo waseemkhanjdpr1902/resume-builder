@@ -29,11 +29,13 @@ export default function InterviewCoach() {
   const [cvText, setCvText] = useState(() => sessionStorage.getItem("resuai_cv_text") || "");
   const [fileName, setFileName] = useState("");
   const [interviewId, setInterviewId] = useState("");
+  const [statelessSession, setStatelessSession] = useState(null);
   const [question, setQuestion] = useState(null);
   const [answer, setAnswer] = useState("");
   const [evaluation, setEvaluation] = useState(null);
   const [answered, setAnswered] = useState(0);
   const [questionCount, setQuestionCount] = useState(5);
+  const [answerHistory, setAnswerHistory] = useState([]);
   const [report, setReport] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -62,8 +64,9 @@ export default function InterviewCoach() {
     setLoading(true); setError("");
     try {
       const count = mode === "Quick Practice" ? 5 : mode === "Standard Interview" ? 10 : mode === "Full Mock Interview" ? 15 : 5;
-      const data = await call({ action: "start", mode, personality, profession, specialty, experienceLevel, targetCountry, targetRole: targetRole || profession, jobTitle: targetRole, jobDescription, cvText, questionCount: count });
-      setInterviewId(data.interviewId); setQuestion(data.question); setQuestionCount(data.questionCount); setAnswered(0); setAnswer(""); setEvaluation(null); setReport(null); setScreen("interview");
+      const session = { mode, personality, profession, specialty, experienceLevel, targetCountry, targetRole: targetRole || profession, jobTitle: targetRole || profession, jobDescription, cvText, questionCount: count };
+      const data = await call({ action: "start", ...session });
+      setInterviewId(data.interviewId); setStatelessSession(data.stateless ? session : null); setQuestion(data.question); setQuestionCount(data.questionCount); setAnswered(0); setAnswerHistory([]); setAnswer(""); setEvaluation(null); setReport(null); setScreen("interview");
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -72,17 +75,19 @@ export default function InterviewCoach() {
     if (!answer.trim() || !question) return;
     setLoading(true); setError("");
     try {
-      const data = await call({ action: "answer", interviewId, questionId: question.id, answer });
-      setEvaluation(data.answer?.feedback || {}); setAnswered(data.answered || answered + 1); setAnswer("");
-      if (data.complete) { await finish(); }
+      const payload = { action: "answer", interviewId, questionId: question.id, question: question.question, category: question.category, answer, answered, questionCount, session: statelessSession, previousAnswers: answerHistory };
+      const data = await call(payload);
+      const nextHistory = data.history || [...answerHistory, { question: question.question, answer, score: data.answer?.score, feedback: data.answer?.feedback }];
+      setEvaluation(data.answer?.feedback || {}); setAnswered(data.answered || answered + 1); setAnswer(""); setAnswerHistory(nextHistory);
+      if (data.complete) await finish(nextHistory);
       else setQuestion(data.nextQuestion);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
 
-  const finish = async () => {
+  const finish = async (answers = answerHistory) => {
     setLoading(true); setError("");
-    try { const data = await call({ action: "complete", interviewId }); setReport(data.report); setScreen("report"); }
+    try { const data = await call({ action: "complete", interviewId, session: statelessSession, answers }); setReport(data.report); setScreen("report"); }
     catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -108,5 +113,5 @@ function InterviewScreen({question,questionCount,answered,answer,setAnswer,evalu
 function Evaluation({evaluation}) { return <div className="evaluation-card"><div className="eval-score"><strong>{evaluation.score || 0}</strong><span>/100</span><small>AI practice score</small></div><div className="eval-body"><h3>Quick feedback</h3><div className="eval-cols"><List title="Strong points" items={evaluation.strengths}/><List title="Improve next" items={evaluation.improvements}/></div>{evaluation.starFeedback && <p className="star"><strong>STAR feedback:</strong> {evaluation.starFeedback}</p>}{evaluation.improvedAnswer && <details><summary>Improve my answer</summary><p>{evaluation.improvedAnswer}</p></details>}</div></div> }
 function Report({report,onAgain,onHistory}) { return <section className="report-page"><div className="report-hero"><span>INTERVIEW PERFORMANCE</span><h1>{report?.overallScore || 0}/100</h1><p>{report?.readinessMessage || "This is an AI-generated practice score, not a hiring prediction."}</p></div><div className="report-grid"><Metric label="Communication" value={report?.communication}/><Metric label="Technical knowledge" value={report?.technicalKnowledge}/><Metric label="Clinical reasoning" value={report?.clinicalReasoning}/><Metric label="Confidence" value={report?.confidence}/><Metric label="Job relevance" value={report?.jobRelevance}/><Metric label="Answer structure" value={report?.answerStructure}/></div><div className="report-columns"><List title="Your strengths" items={report?.strengths}/><List title="Improve before your interview" items={report?.improvementAreas}/><List title="Questions to practice again" items={report?.weakQuestions}/></div><div className="report-actions"><button onClick={onAgain}><FiRefreshCw/> Practice again</button><button onClick={onHistory}>My interview history</button></div></section> }
 function Metric({label,value}) { return <article className="metric"><span>{label}</span><strong>{value ?? "—"}</strong>{value != null && <i><b style={{width:`${Math.max(0,Math.min(100,Number(value)))}%`}}/></i>}</article> }
-function List({title,items}) { const values = Array.isArray(items) ? items.filter(Boolean) : []; return <div className="report-list"><h3>{title}</h3>{values.length ? <ul>{values.map((x,i)=><li key={i}><FiCheckCircle/>{x}</li>)}</ul> : <p>No specific items were identified.</p>}</div> }
+function List({title,items}) { const values = Array.isArray(items) ? items.filter(Boolean) : []; return <div className="report-list"><h3>{title}</h3>{values.length ? <ul>{values.map((x,i)=><li key={i}><FiCheckCircle/>{x}</li></ul>) : <p>No specific items were identified.</p>}</div> }
 function History({items,onAgain}) { return <section className="history-page"><div className="history-heading"><div><span>MY INTERVIEWS</span><h1>Keep getting better.</h1><p>Review your previous AI-generated practice scores and practice again.</p></div><button onClick={onAgain}><FiPlay/> Practice again</button></div>{items.length ? <div className="history-table">{items.map(x=><article key={x.id}><div><strong>{x.target_role}</strong><span>{x.profession} · {x.interview_type} · {x.target_country || "Global"}</span></div><b>{x.overall_score ?? "—"}/100</b><small>{new Date(x.created_at).toLocaleDateString()}</small><FiChevronRight/></article>)}</div> : <div className="empty-history"><FiTrendingUp/><h2>No interviews yet</h2><p>Your first practice session will appear here.</p><button onClick={onAgain}>Start your first interview</button></div>}</section> }
