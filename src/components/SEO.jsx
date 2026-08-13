@@ -14,6 +14,13 @@ const pages = {
   "/contact": { title: "Contact ResuAIBuilder", description: "Contact the ResuAIBuilder team for support with your healthcare CV builder account and tools." },
   "/privacy": { title: "Privacy Policy | ResuAIBuilder", description: "Read how ResuAIBuilder handles account, CV and payment-related information." },
   "/refund-policy": { title: "Refund and Cancellation Policy | ResuAIBuilder", description: "Review ResuAIBuilder subscription, cancellation and refund terms." },
+  "/nurse-resume-builder": { title: "Nurse Resume Builder – ATS Nursing CV | ResuAIBuilder", description: "Build an ATS-friendly nursing CV with prompts for registration, clinical competencies, unit experience and patient-care achievements." },
+  "/doctor-cv-builder": { title: "Doctor CV Builder – Professional Medical CV | ResuAIBuilder", description: "Create a professional doctor CV covering clinical appointments, procedures, registration, audits, teaching, research and publications." },
+  "/pharmacist-resume-builder": { title: "Pharmacist Resume Builder – ATS Pharmacy CV | ResuAIBuilder", description: "Create an ATS-ready pharmacist CV for hospital, clinical, community, regulatory and pharmacovigilance roles." },
+  "/dha-cv-builder": { title: "DHA CV Builder for Dubai Healthcare Jobs | ResuAIBuilder", description: "Build a UAE-focused healthcare CV that clearly presents DHA status, DataFlow progress, credentials and clinical experience." },
+  "/healthcare-ats-checker": { title: "Healthcare ATS Checker & CV Optimiser | ResuAIBuilder", description: "Check healthcare CV structure, role keywords, credentials and evidence, then create a cleaner editable draft from verified information." },
+  "/gulf-healthcare-cv": { title: "Gulf Healthcare CV Builder for GCC Jobs | ResuAIBuilder", description: "Create a healthcare CV for UAE, Saudi Arabia, Qatar and Oman with clear licence readiness and relevant clinical evidence." },
+  "/medical-cv-examples": { title: "Medical CV Examples for Healthcare Professionals | ResuAIBuilder", description: "Explore credible medical, nursing, pharmacy and allied health CV examples and learn to write stronger evidence-led achievements." },
 };
 const privatePrefixes = ["/dashboard", "/login", "/build-resume", "/redirecting", "/get-started", "/ai-assistant"];
 

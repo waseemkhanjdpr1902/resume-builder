@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { FiArrowRight, FiCheck, FiFileText, FiHeart, FiShield, FiTarget, FiTrendingUp } from "react-icons/fi";
 import "../css/home.css";
 import "../css/healthcare-tools.css";
+import "../css/home-professional.css";
+import { seoPageLinks } from "../data/healthcareSeoPages";
 
 const professions = ["Doctors", "Nurses", "Pharmacists", "Allied Health", "Medical Technicians", "Healthcare Leaders"];
 const benefits = [
@@ -29,6 +31,7 @@ export default function Home() {
       </div>
     </section>
     <section className="benefit-section"><div className="section-heading"><span>MORE THAN A TEMPLATE</span><h2>Guidance that understands healthcare hiring</h2><p>Present trust, competence and measurable impact—not a generic list of duties.</p></div><div className="benefit-grid">{benefits.map(({icon,title,text}) => <article className="benefit-card" key={title}>{icon}<h3>{title}</h3><p>{text}</p></article>)}</div></section>
+    <section className="role-pathways"><div className="section-heading"><span>BUILT AROUND YOUR CAREER</span><h2>Choose guidance that matches your healthcare path</h2><p>Start with role-specific CV advice, then build with your own verified experience.</p></div><div>{seoPageLinks.map(([label, path]) => <Link key={path} to={path}>{label}<FiArrowRight /></Link>)}</div></section>
     <section className="steps-section"><div><span className="eyebrow">A CLEAR APPLICATION WORKFLOW</span><h2>From experience to interview-ready.</h2><p>Use structured prompts to turn everyday clinical responsibilities into credible evidence.</p></div><ol>{["Select profession, target role and country","Build your CV with healthcare-specific prompts","Check readiness and create a matching cover letter"].map((step,i)=><li key={step}><span>{i+1}</span><p>{step}</p><FiCheck/></li>)}</ol></section>
     <section className="final-cta"><div><span>START FREE</span><h2>Make your next healthcare application count.</h2><p>Create and preview your CV before paying to download.</p></div><Link className="light-action" to="/get-started">Create my CV <FiArrowRight /></Link></section>
   </main>;
