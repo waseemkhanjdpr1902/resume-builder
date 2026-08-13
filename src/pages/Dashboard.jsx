@@ -1,5 +1,4 @@
 import React from "react";
-import { Heading, Hspace } from "../components/CustomComponents";
 import ClassicalLayout1 from "../components/layouts/classic/layout-1/layout"
 import ScrollableModal from "../components/ScrollableModal";
 import DashboardHeader from "../components/DashboardHeader";
