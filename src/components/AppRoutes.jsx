@@ -21,6 +21,7 @@ import HealthcareGuide from "../pages/HealthcareGuide";
 import ATSChecker from "../pages/ATSChecker";
 import AIAssistant from "../pages/AIAssistant";
 import CareerCopilot from "../pages/CareerCopilot";
+import InterviewCoach from "../pages/InterviewCoach";
 import HealthcareSeoLanding from "../pages/HealthcareSeoLanding";
 import RefundPolicy from "../pages/RefundPolicy";
 import { healthcareSeoPages } from "../data/healthcareSeoPages";
@@ -43,6 +44,7 @@ const AppRoutes = () => {
             <Route exact path="/healthcare-guide" element={<HealthcareGuide />} />
             <Route exact path="/ats-checker" element={<ATSChecker />} />
             <Route exact path="/career-copilot" element={<CareerCopilot />} />
+            <Route exact path="/interview-coach" element={<InterviewCoach />} />
             <Route exact path="/get-started" element={<Navigate to="/ats-checker" replace />} />
             <Route exact path="/ai-assistant" element={<AIAssistant />} />
             {Object.keys(healthcareSeoPages).map(path => <Route key={path} exact path={path} element={<HealthcareSeoLanding />} />)}
