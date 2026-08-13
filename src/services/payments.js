@@ -53,3 +53,7 @@ export async function hasDownloadAccess() {
     return result.active;
   } catch { return false; }
 }
+
+export async function claimFreeDownload() {
+  return requestJson("/api/claim-free-download", {});
+}
