@@ -81,8 +81,21 @@ const LayoutProvider = ({ children }) => {
   // Function to generate a multi-page PDF from a DOM element
   const generatePDF = useCallback(async (filename_prefix = "new_") => {
     const element = pdfRef.current;
+    if (!element) throw new Error("The CV preview is not ready yet.");
+
     // Convert the DOM element to a high-resolution canvas using html2canvas
-    const canvas = await html2canvas(element, { scale: 2 });
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight
+    });
+
+    if (!canvas.width || !canvas.height) {
+      throw new Error("The CV preview could not be rendered.");
+    }
 
     // Convert the canvas to a base64 PNG image
     const imageData = canvas.toDataURL("image/png");
