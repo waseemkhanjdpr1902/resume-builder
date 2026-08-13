@@ -1,16 +1,17 @@
 import React from "react";
 
-import styled, { useTheme } from "styled-components";
+import styled from "styled-components";
 import { StyledNavLink } from "./CustomComponents";
+import { seoPageLinks } from "../data/healthcareSeoPages";
 
 const FooterWrapper = styled.footer`
-  width: 100vw;
+  width: 100%;
   display: flex;
   justify-content: center;
   background-color: ${({ theme }) => theme.colors.navBackground};
   border-top: 1px solid ${({ theme }) => theme.colors.border};
-  margin-top: 10rem;
-  padding: 1.5rem 1rem;
+  margin-top: 6rem;
+  padding: 3.5rem clamp(1.25rem, 4vw, 4rem);
   text-align: center;
 
   @media (min-width: 768px) {
@@ -19,6 +20,7 @@ const FooterWrapper = styled.footer`
 `;
 
 const FooterContent = styled.div`
+  width: min(1180px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -27,6 +29,7 @@ const FooterContent = styled.div`
   @media (min-width: 768px) {
     flex-direction: row;
     justify-content: space-between;
+    align-items: flex-start;
   }
 `;
 
@@ -50,9 +53,10 @@ const Paragraph = styled.p`
 `;
 
 const FooterLinks = styled.ul`
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
   justify-content: center;
-  gap: 1rem;
+  gap: .7rem 1.5rem;
   font-size: 0.875rem;
   color: ${({ theme }) => theme.colors.text};
 
@@ -78,6 +82,7 @@ const Footer = () => {
           </Paragraph>
         </div>
         <FooterLinks>
+          {seoPageLinks.map(([label, path]) => <StyledNavLink key={path} to={path}>{label}</StyledNavLink>)}
           <StyledNavLink to="/about">About</StyledNavLink>
           <StyledNavLink to="/privacy">Privacy</StyledNavLink>
           <StyledNavLink to="/refund-policy">Refunds</StyledNavLink>
