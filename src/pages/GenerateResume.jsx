@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import styled from "styled-components";
 import { Hspace } from "../components/CustomComponents";
-import LayoutInputField from "../components/layouts/input-layout/LayoutInputField";
 import { useLayout } from "../provider/layoutProvider";
 import LayoutPreview from "../components/layouts/input-layout/LayoutPreview";
 import GeneratePageFixedButtons from "../components/generatePageFixedButton";
@@ -11,9 +10,8 @@ import useAutoSaveWithDiff from "../helper/hooks/useAutoSaveWithDiff";
 import DividerProvider from "../provider/DividerProvider";
 import DifferentLayoutHolder from "../components/DifferentLayoutHolder";
 import useHideOnScroll from "../helper/hooks/useHideOnScroll";
-import UploadResumeCard from "../components/UploadResumeCard";
-import { Link, useParams } from "react-router-dom";
-import { FiArrowLeft, FiCheckCircle, FiEdit3, FiShield } from "react-icons/fi";
+import { Link, Navigate, useParams } from "react-router-dom";
+import { FiArrowLeft, FiCheckCircle, FiShield } from "react-icons/fi";
 import "../css/resume-editor.css";
 
 const MainWrapper = styled.section`
@@ -39,8 +37,7 @@ const ResponsiveGrid = styled.div.withConfig({ shouldForwardProp: (prop) => !['i
 const GenerateResume = () => {
   const [showIcons, setShowIcons] = useState(false);
   const [isTemplateChangeModelOpen, setIsTemplateChangeModelOpen] = useState(false);
-  const [isAIGenerated] = useState(() => sessionStorage.getItem("resuai_ai_completed") === "true");
-  const [showEditor, setShowEditor] = useState(() => sessionStorage.getItem("resuai_ai_completed") !== "true");
+  const [isAIGenerated] = useState(() => Boolean(sessionStorage.getItem("resuai_improved_cv")));
   const { isSavedLoaded } = useLayout();
   const { layout_type, layout_id } = useParams();
   const AUTOSAVE_INTERVAL = 1000 * 60;
@@ -48,9 +45,6 @@ const GenerateResume = () => {
   useLoadSavedData();
   useAutoSaveWithDiff(AUTOSAVE_INTERVAL);
   useHideOnScroll(setShowIcons)
-  useEffect(() => {
-    if (isAIGenerated) sessionStorage.removeItem("resuai_ai_completed");
-  }, [isAIGenerated]);
 
   const handleShowIcon = useCallback(() => {
     setShowIcons((prev) => !prev)
@@ -65,6 +59,8 @@ const GenerateResume = () => {
     return <Loading message="Loading saved records from database" />;
   }
 
+  if (!isAIGenerated) return <Navigate to="/ats-checker" replace />;
+
   return (
     <DividerProvider>
       <MainWrapper>
@@ -73,8 +69,8 @@ const GenerateResume = () => {
             <div>
               <Link to="/templates" className="studio-back"><FiArrowLeft /> All templates</Link>
               <span className="studio-eyebrow">HEALTHCARE CV STUDIO</span>
-              <h1>{isAIGenerated ? "Your AI-improved healthcare CV is ready" : "Build a CV healthcare recruiters can trust"}</h1>
-              <p>{isAIGenerated ? "AI has populated this template from your uploaded CV. Review the finished document and edit only if you want to make a correction." : "Show your credentials, clinical competence and patient-care impact while your ATS-friendly document updates alongside you."}</p>
+              <h1>Your AI-improved healthcare CV is ready</h1>
+              <p>AI populated this template from your uploaded CV. Review the preview and return to the ATS report if any suggestion needs correction.</p>
             </div>
             <div className="studio-meta">
               <span><FiCheckCircle /> Autosave enabled</span>
@@ -83,14 +79,13 @@ const GenerateResume = () => {
             </div>
           </header>
           <div className="studio-progress" aria-label="Resume workflow">
-            <span className={isAIGenerated ? "" : "active"}><b>1</b> {isAIGenerated ? "AI completed" : "Add details"}</span><i></i><span className={isAIGenerated ? "active" : ""}><b>2</b> Review</span><i></i><span><b>3</b> Download</span>
+            <span><b>1</b> AI completed</span><i></i><span className="active"><b>2</b> Review</span><i></i><span><b>3</b> Download</span>
           </div>
-          {!isAIGenerated ? <UploadResumeCard /> : <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Complete CV generated from your upload</strong><small>Review all facts before downloading.</small></span></div><button type="button" onClick={() => setShowEditor(value => !value)}><FiEdit3/>{showEditor ? "Hide details" : "Edit any detail"}</button></div>}
-          <ResponsiveGrid className={!showEditor ? "preview-only" : ""} isOpen={isTemplateChangeModelOpen}>
+          <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Complete CV generated from your upload</strong><small>No manual detail form. Review all facts before downloading.</small></span></div><Link to="/ats-checker">Back to ATS suggestions</Link></div>
+          <ResponsiveGrid className="preview-only" isOpen={isTemplateChangeModelOpen}>
           {/* {
             !isTemplateChangeModelOpen  && <LayoutInputField />
           } */}
-          {showEditor ? <LayoutInputField /> : null}
           <LayoutPreview />
           </ResponsiveGrid>
         </div>
