@@ -22,6 +22,7 @@ import ATSChecker from "../pages/ATSChecker";
 import AIAssistant from "../pages/AIAssistant";
 import CareerCopilot from "../pages/CareerCopilot";
 import HealthcareSeoLanding from "../pages/HealthcareSeoLanding";
+import RefundPolicy from "../pages/RefundPolicy";
 import { healthcareSeoPages } from "../data/healthcareSeoPages";
 
 const AppRoutes = () => {
