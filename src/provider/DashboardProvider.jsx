@@ -87,7 +87,7 @@ const DashboardProvider = ({ children }) => {
 
     const handleEdit = useCallback(() => navigate("/templates"), [navigate]);
 
-    const handleCreate = useCallback(() => navigate("/templates"), [navigate]);
+    const handleCreate = useCallback(() => navigate("/ats-checker"), [navigate]);
 
     const handleSearchQuery = useCallback((e) => {
         setSearchQuery(e.target.value);
