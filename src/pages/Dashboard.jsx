@@ -10,7 +10,7 @@ import { usePagination } from "../provider/paginationProvider";
 import Loading from "../components/Loading";
 import { Link } from "react-router-dom";
 import { useAuth } from "../provider/AuthProvider";
-import { FiArrowRight, FiCheckCircle, FiFileText, FiGrid, FiHeart, FiLayers, FiPlus, FiSearch, FiShield, FiTarget, FiZap } from "react-icons/fi";
+import { FiArrowRight, FiCheckCircle, FiFileText, FiGrid, FiHeart, FiLayers, FiMic, FiSearch, FiShield, FiTarget, FiZap } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { hasDownloadAccess } from "../services/payments";
 import "../css/dashboard.css";
@@ -29,13 +29,13 @@ const Dashboard = () => {
   return <div className="dashboard-page"><div className="dashboard-shell">
     <aside className="workspace-sidebar">
       <div className="workspace-label">WORKSPACE</div><Link className="active" to="/dashboard"><FiGrid /> My resumes <span>{resumes.length}</span></Link><Link to="/templates"><FiLayers /> Templates</Link><Link to="/pricing"><FiZap /> Plans & access</Link>
-      <div className="sidebar-divider" /><div className="workspace-label">HEALTHCARE TOOLS</div><Link to="/career-copilot"><FiTarget /> Career Copilot</Link><Link to="/healthcare-guide"><FiHeart /> CV guidance</Link><Link to="/cover-letter"><FiFileText /> Cover letter</Link><Link to="/ats-checker"><FiSearch /> ATS check</Link><Link to="/ai-assistant"><FiZap /> AI assistant</Link>
+      <div className="sidebar-divider" /><div className="workspace-label">HEALTHCARE TOOLS</div><Link to="/career-copilot"><FiTarget /> Career Copilot</Link><Link to="/interview-coach"><FiMic /> Interview Coach</Link><Link to="/healthcare-guide"><FiHeart /> CV guidance</Link><Link to="/cover-letter"><FiFileText /> Cover letter</Link><Link to="/ats-checker"><FiSearch /> ATS check</Link><Link to="/ai-assistant"><FiZap /> AI assistant</Link>
       <div className="sidebar-plan"><FiShield /><div><span>{hasPremium ? "PREMIUM ACCESS" : "FREE WORKSPACE"}</span><strong>{hasPremium ? "Downloads unlocked" : "Upgrade when ready"}</strong></div></div>
     </aside>
     <main className="workspace-main">
-      <section className="dashboard-hero"><div><span>RESUAI HEALTHCARE WORKSPACE</span><h1>Welcome back, {firstName}</h1><p>Build targeted healthcare CVs, check ATS readiness and prepare for every vacancy with AI.</p></div><Link to="/career-copilot" className="hero-create"><FiTarget /> Open Career Copilot</Link></section>
+      <section className="dashboard-hero"><div><span>RESUAI HEALTHCARE WORKSPACE</span><h1>Welcome back, {firstName}</h1><p>Build targeted healthcare CVs, check ATS readiness and prepare for every vacancy with AI.</p></div><Link to="/interview-coach" className="hero-create"><FiMic /> Practice an interview</Link></section>
       <section className="dashboard-stats"><article><div className="stat-icon"><FiFileText /></div><div><strong>{resumes.length}</strong><span>Saved resumes</span></div></article><article><div className="stat-icon success"><FiCheckCircle /></div><div><strong>ATS-ready</strong><span>Professional formatting</span></div></article><article><div className="stat-icon premium"><FiZap /></div><div><strong>{hasPremium ? "Premium" : "Free"}</strong><span>{hasPremium ? "PDF access active" : "Create and preview"}</span></div></article></section>
-      <section className="career-shortcuts"><Link to="/career-copilot"><div className="shortcut-icon tech"><FiTarget /></div><div><span>AI CAREER COPILOT</span><strong>Match a job and improve your CV</strong><p>Compare your CV with a vacancy, find gaps and create a targeted application.</p></div><FiArrowRight /></Link><Link to="/cover-letter"><div className="shortcut-icon medical"><FiFileText /></div><div><span>APPLICATION SUPPORT</span><strong>Create a tailored cover letter</strong><p>Connect your verified experience with the employer's requirements.</p></div><FiArrowRight /></Link></section>
+      <section className="career-shortcuts"><Link to="/career-copilot"><div className="shortcut-icon tech"><FiTarget /></div><div><span>AI CAREER COPILOT</span><strong>Match a job and improve your CV</strong><p>Compare your CV with a vacancy, find gaps and create a targeted application.</p></div><FiArrowRight /></Link><Link to="/interview-coach"><div className="shortcut-icon medical"><FiMic /></div><div><span>INTERVIEW READINESS</span><strong>Practice your next healthcare interview</strong><p>Get CV-based questions, answer feedback and an AI-generated practice score.</p></div><FiArrowRight /></Link></section>
       <section className="resume-library"><DashboardHeader />{error && <p className="dashboard-error">{error}</p>}<ResumeTable />{resumes.length > 0 && PaginationButtons}</section>
     </main>
   </div>{isModalShow && <DeleteModal />}{isPreviewShow && <ResumePreview closePreviewModal={closePreviewModal} />}</div>;
