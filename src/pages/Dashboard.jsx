@@ -79,7 +79,7 @@ if(isLoading) {
         <main className="workspace-main">
           <section className="dashboard-hero">
             <div><span>RESUAI HEALTHCARE WORKSPACE</span><h1>Welcome back, {firstName}</h1><p>Build targeted healthcare CVs, check ATS readiness and prepare a tailored cover letter for every vacancy.</p></div>
-            <Link to="/templates" className="hero-create"><FiPlus /> Create new resume</Link>
+            <Link to="/ats-checker" className="hero-create"><FiPlus /> Upload CV for AI review</Link>
           </section>
 
           <section className="dashboard-stats">

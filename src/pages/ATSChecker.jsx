@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FiAlertCircle, FiArrowRight, FiCheckCircle, FiFileText, FiInfo, FiSearch, FiUploadCloud, FiZap } from "react-icons/fi";
 import { countryGuidance, healthcareRoles } from "../data/healthcareContent";
 import { scoreHealthcareCV } from "../utils/atsScoring";
@@ -28,10 +28,11 @@ export default function ATSChecker() {
   const [confirmed, setConfirmed] = useState(false);
   const authority = countryGuidance[country]?.authorities?.[0] || "";
   const report = useMemo(() => scoreHealthcareCV({ cvText, jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }), [cvText, jobDescription, role, authority]);
+  const improvedReport = useMemo(() => result?.improved ? scoreHealthcareCV({ cvText: JSON.stringify(result.improved), jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }) : null, [result, jobDescription, role, authority]);
 
   const chooseFile = async (file) => {
     if (!file) return;
-    setError(""); setStage("reading"); setResult(null); setConfirmed(false);
+    setError(""); setStage("reading"); setResult(null); setConfirmed(false); sessionStorage.removeItem("resuai_improved_cv"); sessionStorage.removeItem("resuai_ai_completed");
     try { const text = await readCVFile(file); setCvText(text); setFileName(file.name); setStage("ready"); }
     catch (problem) { setError(problem.message); setStage("upload"); }
   };
@@ -51,24 +52,24 @@ export default function ATSChecker() {
   const buildInTemplate = () => { sessionStorage.setItem("resuai_improved_cv", JSON.stringify(normaliseDraft(result.improved))); sessionStorage.setItem("resuai_ai_completed", "true"); navigate("/templates"); };
 
   return <main className="tool-page ats-ai-page">
-    <section className="tool-hero"><span>AI HEALTHCARE CV OPTIMISER</span><h1>Upload your CV. Let AI build the improved version.</h1><p>No long form to complete. We read your existing PDF or DOCX, preserve your verified facts and create an editable, ATS-friendly healthcare CV.</p></section>
+    <section className="tool-hero"><span>UPLOAD-ONLY AI CV REVIEW</span><h1>Upload your CV. Check the score. Improve it with AI.</h1><p>No manual CV form. Upload a PDF or Word file to receive a healthcare ATS score, detailed findings and AI suggestions based only on your verified information.</p></section>
 
     <section className="ai-import-workflow">
-      <div className="workflow-steps"><span className={stage !== "upload" ? "done" : "active"}><b>1</b> Upload CV</span><i/><span className={["improving","review"].includes(stage) ? "done" : stage === "ready" ? "active" : ""}><b>2</b> AI improves</span><i/><span className={stage === "review" ? "active" : ""}><b>3</b> Verify & build</span></div>
+      <div className="workflow-steps"><span className={stage !== "upload" ? "done" : "active"}><b>1</b> Upload PDF/Word</span><i/><span className={["improving","review"].includes(stage) ? "done" : stage === "ready" ? "active" : ""}><b>2</b> ATS score</span><i/><span className={stage === "review" ? "active" : ""}><b>3</b> AI suggestions</span></div>
       {!result ? <div className="ai-import-grid">
         <article className={`cv-dropzone ${fileName ? "has-file" : ""}`} onClick={() => fileRef.current?.click()} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); chooseFile(event.dataTransfer.files[0]); }}>
-          <input ref={fileRef} type="file" hidden accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" onChange={(event) => chooseFile(event.target.files[0])}/>
-          {fileName ? <><FiFileText/><strong>{fileName}</strong><p>{cvText.split(/\s+/).length} words extracted successfully</p><button type="button">Choose another CV</button></> : <><FiUploadCloud/><strong>Drop your existing CV here</strong><p>PDF, DOCX or TXT · Maximum 8 MB · Files are read for this improvement request</p><button type="button">Choose CV</button></>}
+          <input ref={fileRef} type="file" hidden accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => chooseFile(event.target.files[0])}/>
+          {fileName ? <><FiFileText/><strong>{fileName}</strong><p>{cvText.split(/\s+/).length} words extracted successfully</p><button type="button">Choose another CV</button></> : <><FiUploadCloud/><strong>Drop your existing CV here</strong><p>PDF or DOCX · Maximum 8 MB · No manual data-entry form</p><button type="button">Choose PDF or Word CV</button></>}
         </article>
         <div className="ai-import-options">
           <label>Target country<select value={country} onChange={(event) => setCountry(event.target.value)}>{Object.keys(countryGuidance).map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Target healthcare role<select value={role} onChange={(event) => setRole(event.target.value)}>{Object.keys(healthcareRoles).map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Target job description <small>Optional but recommended</small><textarea value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} placeholder="Paste the vacancy so AI can align relevant, verified keywords..."/></label>
-          <button className="generate-improved-cv" type="button" disabled={!cvText || stage === "reading" || stage === "improving"} onClick={improveCV}><FiZap/>{stage === "reading" ? "Reading your CV..." : stage === "improving" ? "Building improved CV..." : "Generate my improved CV"}</button>
+          <button className="generate-improved-cv" type="button" disabled={!cvText || stage === "reading" || stage === "improving"} onClick={improveCV}><FiZap/>{stage === "reading" ? "Reading your CV..." : stage === "improving" ? "Creating AI suggestions..." : "Get ATS score & AI suggestions"}</button>
           <p className="privacy-inline"><FiInfo/>Do not upload patient records, passport numbers or other sensitive identifiers.</p>
         </div>
       </div> : <section className="ai-cv-review">
-        <header><div><span>AI IMPROVED DRAFT</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}. Review the editable content before choosing a template.</p></div><strong>{report.score}/100 original ATS score</strong></header>
+        <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}. Review every suggestion before applying it.</p></div><strong>{report.score}/100 current → {improvedReport?.score || report.score}/100 potential</strong></header>
         <div className="review-columns"><div className="improved-content"><label>Professional summary<textarea value={result.improved.summary || ""} onChange={(event) => updateSummary(event.target.value)}/></label>{emptyArray(result.improved.experiences).map((experience, experienceIndex) => <article key={`${experience.company_name}-${experienceIndex}`}><h3>{experience.position}</h3><p>{experience.company_name} · {experience.start_date}–{experience.end_date}</p>{emptyArray(experience.achievements).map((bullet, bulletIndex) => <textarea aria-label={`Experience bullet ${bulletIndex + 1}`} key={bulletIndex} value={bullet.value || ""} onChange={(event) => updateBullet(experienceIndex, bulletIndex, event.target.value)}/>)}</article>)}</div>
         <aside><h3>What AI improved</h3><ul>{emptyArray(result.improved.improvements).map((item) => <li key={item}><FiCheckCircle/>{item}</li>)}</ul><h3>Information still needed</h3><ul>{emptyArray(result.improved.missingInformation).map((item) => <li key={item}><FiAlertCircle/>{item}</li>)}</ul><label className="verification-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)}/><span>I have checked the names, dates, qualifications, licences and clinical claims.</span></label><button type="button" disabled={!confirmed} onClick={buildInTemplate}>Choose template & build CV <FiArrowRight/></button><button className="start-over" type="button" onClick={() => { setResult(null); setStage("ready"); setConfirmed(false); }}>Start again</button></aside></div>
       </section>}

@@ -34,10 +34,8 @@ export async function readCVFile(file) {
     const mammoth = await import("mammoth/mammoth.browser");
     const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
     text = result.value;
-  } else if (extension === "txt" || file.type === "text/plain") {
-    text = await file.text();
   } else {
-    throw new Error("Upload a PDF, DOCX or TXT CV.");
+    throw new Error("Upload a PDF or DOCX CV.");
   }
 
   const cleaned = cleanText(text);
