@@ -1,5 +1,5 @@
 import React from "react";
-import { Route, Routes } from "react-router-dom"
+import { Navigate, Route, Routes } from "react-router-dom"
 
 import Home from "../pages/Home";
 import Templates from "../pages/Templates";
@@ -20,7 +20,6 @@ import RefundPolicy from "../pages/RefundPolicy";
 import CoverLetter from "../pages/CoverLetter";
 import HealthcareGuide from "../pages/HealthcareGuide";
 import ATSChecker from "../pages/ATSChecker";
-import HealthcareOnboarding from "../pages/HealthcareOnboarding";
 import AIAssistant from "../pages/AIAssistant";
 import HealthcareSeoLanding from "../pages/HealthcareSeoLanding";
 import { healthcareSeoPages } from "../data/healthcareSeoPages";
@@ -46,7 +45,7 @@ const AppRoutes = () => {
             <Route exact path="/cover-letter" element={<CoverLetter />} />
             <Route exact path="/healthcare-guide" element={<HealthcareGuide />} />
             <Route exact path="/ats-checker" element={<ATSChecker />} />
-            <Route exact path="/get-started" element={<HealthcareOnboarding />} />
+            <Route exact path="/get-started" element={<Navigate to="/ats-checker" replace />} />
             <Route exact path="/ai-assistant" element={<AIAssistant />} />
             {Object.keys(healthcareSeoPages).map(path => <Route key={path} exact path={path} element={<HealthcareSeoLanding />} />)}
             <Route exact path="/refund-policy" element={<RefundPolicy />} />
