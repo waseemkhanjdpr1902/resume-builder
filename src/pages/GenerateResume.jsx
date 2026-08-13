@@ -13,6 +13,7 @@ import useHideOnScroll from "../helper/hooks/useHideOnScroll";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle, FiShield } from "react-icons/fi";
 import "../css/resume-editor.css";
+import "../css/download-experience.css";
 
 const MainWrapper = styled.section`
   width: 100%;
@@ -35,7 +36,7 @@ const ResponsiveGrid = styled.div.withConfig({ shouldForwardProp: (prop) => !['i
 
 
 const GenerateResume = () => {
-  const [showIcons, setShowIcons] = useState(false);
+  const [showIcons, setShowIcons] = useState(true);
   const [isTemplateChangeModelOpen, setIsTemplateChangeModelOpen] = useState(false);
   const [isAIGenerated] = useState(() => Boolean(sessionStorage.getItem("resuai_improved_cv")));
   const { isSavedLoaded } = useLayout();
@@ -81,7 +82,7 @@ const GenerateResume = () => {
           <div className="studio-progress" aria-label="Resume workflow">
             <span><b>1</b> AI completed</span><i></i><span className="active"><b>2</b> Review</span><i></i><span><b>3</b> Download</span>
           </div>
-          <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Complete CV generated from your upload</strong><small>No manual detail form. Review all facts before downloading.</small></span></div><Link to="/ats-checker">Back to ATS suggestions</Link></div>
+          <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Your complete CV is ready to shine</strong><small>Review every page, then use the green button to download the full PDF.</small></span></div><Link to="/ats-checker">Back to ATS suggestions</Link></div>
           <ResponsiveGrid className="preview-only" isOpen={isTemplateChangeModelOpen}>
           {/* {
             !isTemplateChangeModelOpen  && <LayoutInputField />
