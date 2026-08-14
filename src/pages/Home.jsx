@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FiArrowRight, FiCheck, FiFileText, FiHeart, FiShield, FiTarget, FiTrendingUp } from "react-icons/fi";
+import { FiArrowRight, FiCheck, FiFileText, FiHeart, FiMic, FiShield, FiTarget, FiTrendingUp } from "react-icons/fi";
 import "../css/home.css";
 import "../css/healthcare-tools.css";
 import "../css/home-professional.css";
@@ -9,7 +9,7 @@ const professions = ["Doctors", "Nurses", "Pharmacists", "Allied Health", "Medic
 const benefits = [
   { icon: <FiHeart />, title: "Built for healthcare", text: "Role-specific guidance for clinical experience, licences, competencies, research and patient-care outcomes." },
   { icon: <FiTarget />, title: "Healthcare ATS guidance", text: "Check the keywords and evidence employers expect for your profession and target country." },
-  { icon: <FiFileText />, title: "Matching cover letters", text: "Create a focused cover letter that connects your clinical strengths with each vacancy." },
+  { icon: <FiMic />, title: "AI interview practice", text: "Practise realistic healthcare interviews, submit your own answers and see how AI can improve them." },
 ];
 
 export default function Home() {
@@ -17,22 +17,22 @@ export default function Home() {
     <section className="hero-section">
       <div className="hero-copy">
         <span className="eyebrow">THE CAREER BUILDER FOR HEALTHCARE PROFESSIONALS</span>
-        <h1>Your clinical experience deserves a stronger CV.</h1>
-        <p className="hero-lead">Build an ATS-friendly healthcare CV and tailored cover letter with guidance for your profession, credentials, target role and country.</p>
-        <div className="hero-actions"><Link className="primary-action" to="/ats-checker">Upload & improve my CV <FiArrowRight /></Link><Link className="secondary-action" to="/cover-letter">Create a cover letter</Link></div>
-        <div className="trust-row"><FiShield /> Private workspace · ATS-friendly layouts · Secure PDF export</div>
+        <h1>Build your CV. Improve it with AI. Practise the interview.</h1>
+        <p className="hero-lead">Create an ATS-friendly healthcare CV, tailor it to jobs and practise realistic interviews with AI feedback based on your profession and experience.</p>
+        <div className="hero-actions"><Link className="primary-action" to="/ats-checker">Upload & improve my CV <FiArrowRight /></Link><Link className="secondary-action" to="/healthcare-interview-coach">Try AI Interview Coach</Link></div>
+        <div className="trust-row"><FiShield /> Healthcare-focused · ATS-friendly layouts · AI interview practice</div>
         <div className="profession-strip">{professions.map(item => <span key={item}>{item}</span>)}</div>
       </div>
       <div className="clinical-preview">
-        <div className="clinical-card-head"><span>HEALTHCARE CV CHECK</span><b>86%</b></div>
-        <div className="score-ring">86<span>ATS readiness</span></div>
-        <div className="check-list"><p><FiCheck /> Licence and registration visible</p><p><FiCheck /> Clinical competencies included</p><p><FiCheck /> Patient-care impact demonstrated</p><p className="suggestion"><FiTrendingUp /> Add target-role keywords</p></div>
-        <Link to="/ats-checker">Check my healthcare CV <FiArrowRight /></Link>
+        <div className="clinical-card-head"><span>AI INTERVIEW COACH</span><b>TRY FREE</b></div>
+        <div className="score-ring">AI<span>Practice feedback</span></div>
+        <div className="check-list"><p><FiCheck /> CV-based questions</p><p><FiCheck /> Role-specific practice</p><p><FiCheck /> AI answer scoring</p><p className="suggestion"><FiTrendingUp /> See a stronger answer</p></div>
+        <Link to="/healthcare-interview-coach">Try the interview coach <FiArrowRight /></Link>
       </div>
     </section>
-    <section className="benefit-section"><div className="section-heading"><span>MORE THAN A TEMPLATE</span><h2>Guidance that understands healthcare hiring</h2><p>Present trust, competence and measurable impact—not a generic list of duties.</p></div><div className="benefit-grid">{benefits.map(({icon,title,text}) => <article className="benefit-card" key={title}>{icon}<h3>{title}</h3><p>{text}</p></article>)}</div></section>
-    <section className="role-pathways"><div className="section-heading"><span>BUILT AROUND YOUR CAREER</span><h2>Choose guidance that matches your healthcare path</h2><p>Start with role-specific CV advice, then build with your own verified experience.</p></div><div>{seoPageLinks.map(([label, path]) => <Link key={path} to={path}>{label}<FiArrowRight /></Link>)}</div></section>
-    <section className="steps-section"><div><span className="eyebrow">A CLEAR APPLICATION WORKFLOW</span><h2>From experience to interview-ready.</h2><p>Use structured prompts to turn everyday clinical responsibilities into credible evidence.</p></div><ol>{["Select profession, target role and country","Build your CV with healthcare-specific prompts","Check readiness and create a matching cover letter"].map((step,i)=><li key={step}><span>{i+1}</span><p>{step}</p><FiCheck/></li>)}</ol></section>
-    <section className="final-cta"><div><span>FIRST PDF FREE</span><h2>Make your next healthcare application count.</h2><p>Upload your PDF or Word CV, check its ATS score and improve it with AI.</p></div><Link className="light-action" to="/ats-checker">Upload my CV <FiArrowRight /></Link></section>
+    <section className="benefit-section"><div className="section-heading"><span>MORE THAN A TEMPLATE</span><h2>From CV preparation to interview confidence</h2><p>Use one healthcare career workspace instead of separate generic tools.</p></div><div className="benefit-grid">{benefits.map(({icon,title,text}) => <article className="benefit-card" key={title}>{icon}<h3>{title}</h3><p>{text}</p></article>)}</div></section>
+    <section className="role-pathways"><div className="section-heading"><span>BUILT AROUND YOUR CAREER</span><h2>Choose guidance that matches your healthcare path</h2><p>Start with role-specific CV advice, then practise explaining your real experience.</p></div><div>{seoPageLinks.map(([label, path]) => <Link key={path} to={path}>{label}<FiArrowRight /></Link>)}</div></section>
+    <section className="steps-section"><div><span className="eyebrow">A CLEAR APPLICATION WORKFLOW</span><h2>From experience to interview-ready.</h2><p>Turn your real experience into a stronger application and practise how you will explain it.</p></div><ol>{["Upload your CV and check ATS readiness","Improve your CV and create a matching application","Practise the interview and improve your answers with AI"].map((step,i)=><li key={step}><span>{i+1}</span><p>{step}</p><FiCheck/></li>)}</ol></section>
+    <section className="final-cta"><div><span>TRY THE AI INTERVIEW COACH</span><h2>See the value before you subscribe.</h2><p>Experience a real interview question, submit your answer and see AI-generated practice feedback.</p></div><Link className="light-action" to="/healthcare-interview-coach">Try AI Interview Coach <FiArrowRight /></Link></section>
   </main>;
 }
