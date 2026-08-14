@@ -9,8 +9,6 @@ import * as z from "zod"
 import { zodResolver } from '@hookform/resolvers/zod';
 import Container from "../components/Container";
 
-
-
 const PageWrapper = styled.section`
   padding: 4rem 2rem;
   max-width: 1200px;
@@ -69,6 +67,12 @@ const InfoSection = styled.div`
   gap: 2rem;
 `;
 
+const CompanyName = styled.div`
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text};
+`;
+
 const InfoItem = styled.div`
   display: flex;
   align-items: center;
@@ -80,6 +84,7 @@ const InfoItem = styled.div`
     color: ${({ theme }) => theme.colors.accent};
   }
 `;
+
 const schema = z.object({
     name: z.string()
         .min(1, { message: "Name is required" })
@@ -89,6 +94,7 @@ const schema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
     message: z.string().min(1, { message: "Message is required" }),
 });
+
 const ContactPage = () => {
     const {
         register,
@@ -105,7 +111,6 @@ const ContactPage = () => {
          <PageWrapper>
             <Heading>Contact Us</Heading>
             <ContactGrid>
-                {/* Contact Form */}
                 <FormSection onSubmit={handleSubmit(onSubmit)}>
                     <Input type="text" name="name" placeholder="Your Name"{...register("name")} />
                     {errors.name && <ErrorParagraph>{errors.name.message}</ErrorParagraph>}
@@ -116,19 +121,19 @@ const ContactPage = () => {
                     <SubmitButton type="submit">Send Message</SubmitButton>
                 </FormSection>
 
-                {/* Contact Information */}
                 <InfoSection>
+                    <CompanyName>Wyonora Global</CompanyName>
                     <InfoItem>
                         <BiPhone size={20} />
-                        <span>+9779819222211</span>
+                        <span>+91 63758 62123</span>
                     </InfoItem>
                     <InfoItem>
                         <BsMailbox size={20} />
-                        <span>support@resumebuilder.com</span>
+                        <span>Email address will be updated soon</span>
                     </InfoItem>
                     <InfoItem>
                         <FaMapMarker size={20} />
-                        <span>Dharan,Sunari Nepal</span>
+                        <span>India</span>
                     </InfoItem>
                 </InfoSection>
             </ContactGrid>
