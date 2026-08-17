@@ -94,25 +94,48 @@ const StableResumeDocument = memo(() => {
   const blocks = useMemo(() => buildBlocks(liveDetails || {}), [liveDetails]);
   const selectedTemplate = professionalTemplates.find((template) => template.layoutType === layout_type && template.layoutId === Number(layout_id));
   const showPhoto = Boolean(selectedTemplate?.photoReady && typeof liveDetails?.personalDetails?.profile === "string" && liveDetails.personalDetails.profile);
+  const isClinicalSidebar = layout_type === "modern";
 
   useLayoutEffect(() => {
     const fullPageHeight = 952;
     const firstPageHeight = Math.max(650, fullPageHeight - Math.ceil(headerRef.current?.getBoundingClientRect().height || 0));
     const heights = blockRefs.current.slice(0, blocks.length).map((element) => element?.getBoundingClientRect().height || 0);
+    if (isClinicalSidebar) {
+      const sidebarPrefixes = ["skill-", "education-", "certificate-", "language-", "passion-", "achievement-"];
+      const sidebarCandidates = blocks.map((block, index) => ({ block, index })).filter(({ block }) => sidebarPrefixes.some((prefix) => block.key.startsWith(prefix)));
+      const sidebar = [];
+      let sidebarHeight = 0;
+      sidebarCandidates.forEach(({ index }) => {
+        if (sidebarHeight + heights[index] <= firstPageHeight) {
+          sidebar.push(index);
+          sidebarHeight += heights[index];
+        }
+      });
+      const sidebarSet = new Set(sidebar);
+      const mainCandidates = blocks.map((_, index) => index).filter((index) => !sidebarSet.has(index));
+      const mainPages = packBlocksByHeight(mainCandidates.map((index) => heights[index]), firstPageHeight, fullPageHeight)
+        .map((page) => page.map((position) => mainCandidates[position]));
+      const firstMain = mainPages.shift() || [];
+      const remainder = mainPages.flat().sort((a, b) => a - b);
+      const continuationPages = packBlocksByHeight(remainder.map((index) => heights[index]), fullPageHeight, fullPageHeight)
+        .map((page) => ({ full: page.map((position) => remainder[position]) }));
+      setPages([{ main: firstMain, sidebar }, ...continuationPages]);
+      return;
+    }
     const grouped = packBlocksByHeight(heights, firstPageHeight, fullPageHeight);
-    setPages(grouped.length ? grouped : [blocks.map((_, index) => index)]);
-  }, [blocks, layout_id, layout_type, showPhoto]);
+    setPages((grouped.length ? grouped : [blocks.map((_, index) => index)]).map((page) => ({ full: page })));
+  }, [blocks, isClinicalSidebar, layout_id, layout_type, showPhoto]);
 
   const personal = liveDetails?.personalDetails || {};
-  const renderBlock = (block, index) => <section className="stable-cv-block" key={block.key} ref={(element) => { blockRefs.current[index] = element; }}>{block.title ? <h2>{block.title}</h2> : null}{block.content}</section>;
-  const displayPages = pages.length ? pages : [blocks.map((_, index) => index)];
+  const renderBlock = (block, index) => <section className="stable-cv-block" data-block-key={block.key} key={block.key} ref={(element) => { blockRefs.current[index] = element; }}>{block.title ? <h2>{block.title}</h2> : null}{block.content}</section>;
+  const displayPages = pages.length ? pages : [{ full: blocks.map((_, index) => index) }];
 
   return (
     <div ref={pdfRef} className={`stable-cv-document stable-format-${layout_type}`}>
       {displayPages.map((page, pageIndex) => (
         <article className="stable-cv-page" data-resume-page="true" key={pageIndex}>
           {pageIndex === 0 ? <header ref={headerRef} className="stable-cv-header">{showPhoto ? <img src={personal.profile} alt="Candidate portrait" /> : null}<div><h1>{clean(personal.name) || "Candidate name"}</h1><h3>{clean(personal.profession)}</h3><p>{[clean(personal.phone), clean(personal.email), clean(personal.address), ...values(personal.urls).map((url) => clean(url?.value))].filter(Boolean).join("  ·  ")}</p></div></header> : null}
-          {page.map((blockIndex) => renderBlock(blocks[blockIndex], blockIndex))}
+          {page.main || page.sidebar ? <div className="stable-sidebar-body"><main>{(page.main || []).map((blockIndex) => renderBlock(blocks[blockIndex], blockIndex))}</main><aside>{(page.sidebar || []).map((blockIndex) => renderBlock(blocks[blockIndex], blockIndex))}</aside></div> : (page.full || []).map((blockIndex) => renderBlock(blocks[blockIndex], blockIndex))}
         </article>
       ))}
     </div>

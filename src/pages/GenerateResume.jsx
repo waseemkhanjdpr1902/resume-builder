@@ -86,7 +86,7 @@ const GenerateResume = () => {
           </div>
           <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Your PDF-derived CV is complete</strong><small>All detected information has been populated automatically. Manual entry is not required.</small></span></div><div className="ready-actions"><button type="button" onClick={() => setShowEditor((current) => !current)}><FiEdit3/>{showEditor ? "Hide editor" : "Edit details or add photo"}</button><Link to="/ats-checker">Back to ATS suggestions</Link></div></div>
           <CandidatePhotoUploader onChoosePhotoFormat={openTemplateChangeModal} />
-          <div className="stable-format-toolbar"><div><span>CV FORMAT</span><strong>Neutral ATS-safe document</strong><small>Formatting is fixed for reliable A4 preview and PDF export.</small></div><button type="button" onClick={openTemplateChangeModal}><FiGrid/> Change format</button></div>
+          <div className="stable-format-toolbar"><div><span>CV FORMAT</span><strong>{layout_type === "modern" ? "GCC Clinical Sidebar" : layout_type === "simple" ? "Compact Medical" : "Standard ATS"}</strong><small>Formatting is fixed for reliable A4 preview and PDF export.</small></div><button type="button" onClick={openTemplateChangeModal}><FiGrid/> Change format</button></div>
           <ResponsiveGrid className={!showEditor ? "preview-only" : ""} isOpen={isTemplateChangeModelOpen}>
           {!isTemplateChangeModelOpen && showEditor && <LayoutInputField />}
           <LayoutPreview />
