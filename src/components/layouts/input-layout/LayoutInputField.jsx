@@ -40,16 +40,17 @@ const generatedProps = useMemo(() => {
       return props
     }
     const handleClassicLayoutProps = () => {
-      props.header={acceptImage:false}
+      props.header={acceptImage:true}
       switch (layout_id) {
         case 2:
           props.header = {
             ...props.header,
             shouldAcceptAddress: false,
           }
-          case 4:{
+          break
+        case 4:
           props.header = {...props.header,acceptProfession:false}
-          }
+          break
       }
       
       return props
@@ -83,7 +84,7 @@ const generatedProps = useMemo(() => {
   const sectionData = fetchSectionData({ layout_id, layout_type, props: generatedProps })
   const { handleSubmit } = useFormContext()
   const onSubmit = (data) => {
-    console.log(data)
+    return data
   }
   
   return (
@@ -93,9 +94,8 @@ const generatedProps = useMemo(() => {
           <div className="editor-card-heading"><div><span>YOUR INFORMATION</span><H3>Resume details</H3></div><small>Fields update the preview automatically</small></div>
   
           <ResumeInputFieldWrapper>
-            {sectionData.map((section, i) => {
+            {sectionData.map((section) => {
               const isExperienceSection = section.key === "experience-0";
-              console.log("section key",section.key,i)
               return (
                 <Section key={section.key} data-section={isExperienceSection ? "experience" : section.key}>
                   {section.content()}

@@ -10,7 +10,7 @@ const atsTone = { Excellent: "ats-excellent", Strong: "ats-strong" };
 function ResumePreview({ template }) {
   const { sample } = template;
   return <div className={`cv-sheet cv-${template.id}`} style={{ "--cv-accent": template.accent }} aria-label={`Full ${template.name} CV preview`}>
-    <header><h3>{sample.name}</h3><p>{sample.title}</p><small>email@example.com · +00 000 000 0000 · City, Country</small></header>
+    <header>{template.photoReady ? <span className="template-photo" aria-hidden="true">{sample.name.split(" ").filter(Boolean).slice(0,2).map(part => part[0]).join("")}</span> : null}<h3>{sample.name}</h3><p>{sample.title}</p><small>email@example.com · +00 000 000 0000 · City, Country</small></header>
     <section><h4>Professional profile</h4><p>Compassionate healthcare professional delivering safe, evidence-based care through clear communication and multidisciplinary collaboration.</p></section>
     <section><h4>Registration & credentials</h4><p>{sample.credentials}</p></section>
     <section><h4>Core clinical skills</h4><p>{sample.skills}</p></section>
@@ -32,7 +32,7 @@ function TemplateCard({ template }) {
     <div className="template-details">
       <div className="template-title-row"><div><span className="career-label">{healthcareTracks.find(item => item.id === template.track)?.label}</span><h2>{template.name}</h2></div><span className={`ats-badge ${atsTone[template.ats]}`}><FiShield /> ATS {template.ats}</span></div>
       <p>{template.description}</p>
-      <div className="template-meta"><span>{template.format}</span><span>{template.level}</span></div>
+      <div className="template-meta"><span>{template.format}</span><span>{template.level}</span>{template.photoReady ? <span>Optional photo</span> : null}</div>
       <div className="role-tags">{template.roles.map(role => <span key={role}>{role}</span>)}</div>
       <ul className="template-strengths">{template.strengths.map(item => <li key={item}><FiCheck /> {item}</li>)}</ul>
       <Link className="use-template-button" to={destination}>{hasAIDraft ? "Apply to my AI-improved CV" : "Upload CV for AI analysis"} <FiArrowRight /></Link>
