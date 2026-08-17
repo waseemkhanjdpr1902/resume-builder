@@ -7,21 +7,26 @@ const fetchWithTimeout = async (url, options, timeoutMs = 22000) => {
   try { return await fetch(url, { ...options, signal: controller.signal }); }
   finally { clearTimeout(timer); }
 };
+const providerError = async (provider, response) => {
+  let code = "unknown";
+  try { code = (await response.json())?.error?.code || "unknown"; } catch { /* provider returned no JSON */ }
+  return new Error(`${provider} request failed (${response.status}, ${code})`);
+};
 
 const providers = {
   openai: async ({ system, prompt }) => {
     const key = process.env.OPENAI_API_KEY;
     if (!key) return null;
     const r = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4.1-mini", temperature: 0.15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) });
-    if (!r.ok) throw new Error("OpenAI request failed");
+    if (!r.ok) throw await providerError("OpenAI", r);
     const data = await r.json();
     return data.choices?.[0]?.message?.content || null;
   },
   groq: async ({ system, prompt }) => {
     const key = process.env.GROQ_API_KEY;
     if (!key) return null;
-    const r = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile", temperature: 0.15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) });
-    if (!r.ok) throw new Error("Groq request failed");
+    const r = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.GROQ_MODEL || "openai/gpt-oss-20b", temperature: 0.15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) });
+    if (!r.ok) throw await providerError("Groq", r);
     const data = await r.json();
     return data.choices?.[0]?.message?.content || null;
   },
