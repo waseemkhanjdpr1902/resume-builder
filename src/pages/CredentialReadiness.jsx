@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiAlertTriangle, FiArrowRight, FiCheck, FiCheckCircle, FiFileText, FiGlobe, FiLock, FiShield, FiTarget } from "react-icons/fi";
 import { calculateReadiness, credentialOptions, destinations, professions } from "../data/credentialReadiness";
-import { hasDownloadAccess } from "../services/payments";
+import supabase from "../../supabaseClient";
 import "../css/credential-readiness.css";
-
-const FREE_USE_KEY = "resuai_credential_readiness_used";
 
 export default function CredentialReadiness() {
   const [profession, setProfession] = useState("Nurse");
@@ -13,31 +11,26 @@ export default function CredentialReadiness() {
   const [experienceYears, setExperienceYears] = useState(2);
   const [credentials, setCredentials] = useState([]);
   const [report, setReport] = useState(null);
-  const [premium, setPremium] = useState(false);
-  const [checkingAccess, setCheckingAccess] = useState(true);
-  const [freeUsed, setFreeUsed] = useState(() => localStorage.getItem(FREE_USE_KEY) === "1");
-  const [freeReportVisible, setFreeReportVisible] = useState(false);
-
-  useEffect(() => {
-    hasDownloadAccess().then(setPremium).finally(() => setCheckingAccess(false));
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const country = destinations[destination];
   const selectedCount = credentials.length;
-  const locked = freeUsed && !premium;
-  const reportLocked = locked && !freeReportVisible;
   const previewScore = useMemo(() => calculateReadiness({ profession, destination, experienceYears, credentials }).score, [profession, destination, experienceYears, credentials]);
 
   const toggleCredential = id => setCredentials(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
-  const generateReport = () => {
-    const nextReport = calculateReadiness({ profession, destination, experienceYears, credentials });
-    setReport(nextReport);
-    setFreeReportVisible(!locked);
-    if (!premium) {
-      localStorage.setItem(FREE_USE_KEY, "1");
-      setFreeUsed(true);
-    }
-    requestAnimationFrame(() => document.getElementById("readiness-report")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  const generateReport = async () => {
+    setLoading(true); setError(""); setReport(null);
+    try {
+      const { data: { session } = {} } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in to generate your free readiness report.");
+      const response = await fetch("/api/credential-readiness", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ profession, destination, experienceYears, credentials }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "The readiness service is temporarily unavailable.");
+      setReport(data);
+      requestAnimationFrame(() => document.getElementById("readiness-report")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    } catch (reason) { setError(reason.message); }
+    finally { setLoading(false); }
   };
 
   return <main className="credential-page">
@@ -52,8 +45,9 @@ export default function CredentialReadiness() {
         <div className="profile-fields"><label>Healthcare profession<select value={profession} onChange={event => setProfession(event.target.value)}>{professions.map(item => <option key={item}>{item}</option>)}</select></label><label>Destination country<select value={destination} onChange={event => setDestination(event.target.value)}>{Object.keys(destinations).map(item => <option key={item}>{item}</option>)}</select></label><label>Completed experience (years)<input type="number" min="0" max="50" value={experienceYears} onChange={event => setExperienceYears(event.target.value)}/></label></div>
         <div className="country-snapshot"><FiGlobe/><div><span>LIKELY REGULATORY ROUTE</span><strong>{country.regulator}</strong><p>{country.verification}</p></div></div>
         <fieldset><legend>Which documents or milestones do you already have?</legend><div className="credential-checklist">{credentialOptions.map(item => <label key={item.id} className={credentials.includes(item.id) ? "selected" : ""}><input type="checkbox" checked={credentials.includes(item.id)} onChange={() => toggleCredential(item.id)}/><span><FiCheck/><strong>{item.label}</strong>{item.essential ? <small>Core evidence</small> : null}</span></label>)}</div></fieldset>
-        <button className="generate-readiness" onClick={generateReport} disabled={checkingAccess}><FiTarget/>{checkingAccess ? "Checking access..." : locked ? "Preview updated score" : "Generate my readiness report"}</button>
-        <p className="use-note">{premium ? "Premium access: unlimited destination assessments." : freeUsed ? "Your free complete assessment has been used. You can still update the preview score." : `${selectedCount} of ${credentialOptions.length} readiness items selected.`}</p>
+        <button className="generate-readiness" onClick={generateReport} disabled={loading}><FiTarget/>{loading ? "Preparing secure report..." : "Generate my readiness report"}</button>
+        <p className="use-note">{selectedCount} of {credentialOptions.length} readiness items selected. One complete report is free per account.</p>
+        {error ? <div className="readiness-error"><FiLock/><div><strong>{error.includes("sign in") ? "Secure sign-in required" : error.includes("used") ? "Free report used" : "Something needs attention"}</strong><p>{error}</p><Link to={error.includes("sign in") ? "/login?redirectTo=%2Fcredential-readiness" : "/pricing"}>{error.includes("sign in") ? "Sign in to continue" : "See premium plans"} <FiArrowRight/></Link></div></div> : null}
       </div>
 
       <aside className="readiness-guide"><span>WHAT YOU WILL RECEIVE</span><h2>A practical country action plan</h2><div><FiTarget/><p><strong>Readiness score</strong><small>Weighted around essential evidence and experience.</small></p></div><div><FiAlertTriangle/><p><strong>Priority blockers</strong><small>See the missing items most likely to delay your application.</small></p></div><div><FiFileText/><p><strong>Document checklist</strong><small>Prepare evidence before licensing or employer review.</small></p></div><div><FiGlobe/><p><strong>Destination guidance</strong><small>CV format, regulatory route and suggested next steps.</small></p></div><p className="regulator-note"><FiShield/> Requirements change. This tool provides preparation guidance and does not replace an official regulator assessment.</p></aside>
@@ -61,7 +55,7 @@ export default function CredentialReadiness() {
 
     {report ? <section id="readiness-report" className="readiness-report">
       <header><div><span>YOUR READINESS REPORT</span><h2>{profession} → {destination}</h2><p>{report.status}. Prioritise verified evidence before submitting applications.</p></div><div className={`report-score score-${report.score >= 80 ? "high" : report.score >= 55 ? "medium" : "low"}`}><strong>{report.score}</strong><small>/100</small></div></header>
-      {reportLocked ? <div className="report-paywall"><FiLock/><h3>Your updated score is {report.score}/100</h3><p>Upgrade to unlock repeat country reports, the complete blocker analysis and unlimited destination comparisons.</p><Link to="/pricing">Unlock complete report <FiArrowRight/></Link></div> : <ReportDetails report={report}/>} 
+      <ReportDetails report={report}/>
     </section> : null}
   </main>;
 }
