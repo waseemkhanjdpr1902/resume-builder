@@ -16,10 +16,10 @@ function PlanCard({ plan }) {
 }
 
 export default function Pricing() {
-  return <main className="pricing-page"><section className="pricing-hero"><span>YOUR FIRST PDF DOWNLOAD IS FREE</span><h1>Build, verify and download your first healthcare CV free.</h1><p>No watermark and no card required for the first PDF download after sign-in. Upgrade only when you need additional CV versions and downloads.</p></section>
+  return <main className="pricing-page"><section className="pricing-hero"><span>AI-POWERED · SELF-SERVICE · NO HUMAN REVIEW</span><h1>Choose an AI career plan for your experience level.</h1><p>Start free, then unlock automated CV improvement, job matching, cover letters and interview practice designed around your healthcare career stage.</p><div className="automation-notice"><FiShield/><span><strong>Transparent AI service</strong>Every paid plan is delivered automatically through the platform. It does not include a human writer, recruiter consultation or guaranteed employment outcome.</span></div></section>
     <section className="subscription-grid four-plans">{subscriptionPlans.map(plan => <PlanCard plan={plan} key={plan.id} />)}</section>
     <p className="international-price-note">Launch prices are charged in INR. International customers can pay using supported cards; their bank or card network determines the converted amount and any foreign-exchange fee.</p>
     <section className="checkout-trust"><div><FiLock /><span><strong>Secure checkout</strong>Payments processed by Razorpay</span></div><div><FiShield /><span><strong>Verified before access</strong>Downloads unlock after signature verification</span></div><div><FiRefreshCw /><span><strong>Clear terms</strong><Link to="/refund-policy">Read refund and cancellation policy</Link></span></div></section>
-    <section className="pricing-note"><div><span>BUILT FOR HEALTHCARE APPLICATIONS</span><h2>Clinical careers need credible proof.</h2></div><p>Healthcare employers look for licences, clinical competencies, patient safety, documentation and measurable care outcomes. ResuAI Healthcare helps you present each clearly.</p></section>
+    <section className="pricing-note"><div><span>ONE PLATFORM · DIFFERENT CAREER STAGES</span><h2>Your experience changes what your CV must prove.</h2></div><p>Early-career candidates need credible placements and transferable evidence. Experienced professionals need specialty achievements. Healthcare leaders need measurable quality, governance, operations and people impact.</p></section>
   </main>;
 }
