@@ -83,56 +83,51 @@ const LayoutProvider = ({ children }) => {
     const element = pdfRef.current;
     if (!element) throw new Error("The CV preview is not ready yet.");
 
-    // Convert the DOM element to a high-resolution canvas using html2canvas
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-      logging: false,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight
-    });
+    const previewCanvas = element.closest(".preview-canvas");
+    const previousZoom = previewCanvas?.style.zoom || "";
+    const previousFilter = previewCanvas?.style.filter || "";
 
-    if (!canvas.width || !canvas.height) {
-      throw new Error("The CV preview could not be rendered.");
+    try {
+      // Capture the document at its real A4 size. The editor uses CSS zoom,
+      // which otherwise causes html2canvas to collapse and overlap glyphs.
+      if (previewCanvas) {
+        previewCanvas.style.zoom = "1";
+        previewCanvas.style.filter = "none";
+      }
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const pages = [...element.querySelectorAll('[data-resume-page="true"]')];
+      if (!pages.length) throw new Error("No printable CV pages were found.");
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+      for (let index = 0; index < pages.length; index += 1) {
+        const page = pages[index];
+        const canvas = await html2canvas(page, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          logging: false,
+          width: page.offsetWidth,
+          height: page.offsetHeight,
+          windowWidth: page.offsetWidth,
+          windowHeight: page.offsetHeight,
+          scrollX: 0,
+          scrollY: 0,
+        });
+        if (!canvas.width || !canvas.height) throw new Error(`CV page ${index + 1} could not be rendered.`);
+        if (index > 0) pdf.addPage("a4", "portrait");
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, 210, 297, undefined, "FAST");
+      }
+
+      const filename = `${filename_prefix}resume-${Date.now()}.pdf`;
+      return new File([pdf.output("blob")], filename, { type: "application/pdf" });
+    } finally {
+      if (previewCanvas) {
+        previewCanvas.style.zoom = previousZoom;
+        previewCanvas.style.filter = previousFilter;
+      }
     }
-
-    // Convert the canvas to a base64 PNG image
-    const imageData = canvas.toDataURL("image/png");
-
-    // Initialize a jsPDF instance for an A4 portrait PDF (units in pixels)
-    const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: "a4" });
-
-    // Get dimensions of the PDF page
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    // Calculate the scaled height of the image to fit the PDF width
-    const imgProps = pdf.getImageProperties(imageData);
-    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    // Initialize remaining height and drawing position
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    // Add the first portion of the image to the first page
-    pdf.addImage(imageData, "PNG", 0, position, pdfWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    // Add remaining portions of the image to new pages
-    while (heightLeft > 0) {
-      position -= pageHeight;      // Move the image up by one page
-      pdf.addPage();               // Add a new page
-      pdf.addImage(imageData, "PNG", 0, position, pdfWidth, imgHeight); // Draw remaining image
-      heightLeft -= pageHeight;    // Reduce the remaining height
-    }
-
-    // Save the PDF file with a timestamped filename
-    const filename = `${filename_prefix}resume-${Date.now()}.pdf`
-    const pdfBlob = pdf.output("blob")
-    //create file from blob
-    const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
-    return pdfFile
   });
 
 
