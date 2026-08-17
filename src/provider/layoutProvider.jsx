@@ -140,13 +140,15 @@ const LayoutProvider = ({ children }) => {
 
   // Group sections into printable pages
   const groupSectionsIntoPages = useCallback((refs, setMeasured, setPages) => {
+    // A4 is 1122.5 CSS px at 96dpi. ResumeWrapper uses 20mm (about 76px)
+    // padding at the top and bottom, leaving roughly 971px of usable content.
     const PAGE_HEIGHT = 970;
     let grouped = [], currentGroup = [], currentHeight = 0;
 
     refs.current.forEach((ref, idx) => {
       if (ref && ref.offsetHeight) {
         const sectionHeight = ref.offsetHeight;
-        if (currentHeight + sectionHeight > PAGE_HEIGHT) {
+        if (currentGroup.length > 0 && currentHeight + sectionHeight > PAGE_HEIGHT) {
           grouped.push(currentGroup);
           currentGroup = [];
           currentHeight = 0;
