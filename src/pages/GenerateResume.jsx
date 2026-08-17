@@ -10,6 +10,7 @@ import useAutoSaveWithDiff from "../helper/hooks/useAutoSaveWithDiff";
 import DividerProvider from "../provider/DividerProvider";
 import DifferentLayoutHolder from "../components/DifferentLayoutHolder";
 import CvThemeCustomizer from "../components/CvThemeCustomizer";
+import CandidatePhotoUploader from "../components/CandidatePhotoUploader";
 import useHideOnScroll from "../helper/hooks/useHideOnScroll";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle, FiEdit3, FiShield } from "react-icons/fi";
@@ -85,6 +86,7 @@ const GenerateResume = () => {
             <span><b>1</b> AI completed</span><i></i><span className="active"><b>2</b> Review</span><i></i><span><b>3</b> Download</span>
           </div>
           <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Your PDF-derived CV is complete</strong><small>All detected information has been populated automatically. Manual entry is not required.</small></span></div><div className="ready-actions"><button type="button" onClick={() => setShowEditor((current) => !current)}><FiEdit3/>{showEditor ? "Hide editor" : "Edit details or add photo"}</button><Link to="/ats-checker">Back to ATS suggestions</Link></div></div>
+          <CandidatePhotoUploader onChoosePhotoFormat={openTemplateChangeModal} />
           <CvThemeCustomizer value={resumeTheme} onChange={setResumeTheme} onChangeFormat={openTemplateChangeModal} />
           <ResponsiveGrid className={!showEditor ? "preview-only" : ""} isOpen={isTemplateChangeModelOpen}>
           {!isTemplateChangeModelOpen && showEditor && <LayoutInputField />}
