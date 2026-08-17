@@ -20,7 +20,7 @@ function ResumePreview({ template }) {
 }
 
 function TemplateCard({ template }) {
-  const hasAIDraft = Boolean(sessionStorage.getItem("resuai_improved_cv"));
+  const hasAIDraft = Boolean(sessionStorage.getItem("resuai_improved_cv") || sessionStorage.getItem("resuai_ai_completed"));
   const destination = hasAIDraft ? `/build-resume/${template.layoutType}/${template.layoutId}` : "/ats-checker";
   const actionLabel = hasAIDraft ? "Use this template" : "Upload CV first";
   return <article className="pro-template-card">
