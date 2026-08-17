@@ -29,6 +29,7 @@ export default function CareerCopilot() {
 
   const cvReady = cvText.trim().length >= 120;
   const score = useMemo(() => Number(result?.overallScore || 0), [result]);
+  const runReason = loading ? "Your request is being analysed." : !cvReady ? "Upload a readable PDF or Word CV first." : tool !== "optimize" && jobDescription.trim().length < 80 ? "Paste at least 80 characters from the target job description." : "";
 
   const uploadCV = async (file) => {
     if (!file) return;
@@ -76,7 +77,8 @@ export default function CareerCopilot() {
           <label>Target country<select value={country} onChange={e => setCountry(e.target.value)}><option>UAE</option><option>Saudi Arabia</option><option>Qatar</option><option>Oman</option><option>Bahrain</option><option>Kuwait</option><option>India</option><option>Global</option></select></label>
           {tool !== "optimize" && <label>Job description<textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Paste the vacancy here..."/></label>}
           {tool === "cover" && <><label>Company name<input value={company} onChange={e => setCompany(e.target.value)} placeholder="Hospital or employer"/></label><label>Job title<input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Staff Nurse"/></label><label>Style<select value={style} onChange={e => setStyle(e.target.value)}><option>Professional</option><option>Concise</option><option>Executive</option></select></label></>}
-          <button className="copilot-run" disabled={!cvReady || loading || (tool !== "optimize" && jobDescription.trim().length < 80)} onClick={run}><FiZap/>{loading ? "AI is analysing..." : tool === "match" ? "Check job match" : tool === "optimize" ? "Find CV improvements" : "Generate cover letter"}</button>
+          <button className="copilot-run" disabled={Boolean(runReason)} title={runReason || "Run Career Copilot"} onClick={run}><FiZap/>{loading ? "AI is analysing..." : !cvReady ? "Upload CV to continue" : tool !== "optimize" && jobDescription.trim().length < 80 ? "Add job description to continue" : tool === "match" ? "Check job match" : tool === "optimize" ? "Find CV improvements" : "Generate cover letter"}</button>
+          {runReason && !loading ? <p className="control-reason"><FiAlertTriangle/>{runReason}</p> : null}
           {error && <div className="copilot-auth-message"><FiLock/><div><strong>{error.includes("sign in") || error.includes("session") ? "Secure sign-in required" : error.includes("Upgrade") ? "Free result used" : "Something needs attention"}</strong><p>{error}</p>{(error.includes("sign in") || error.includes("session")) ? <Link to={`/login?redirectTo=${encodeURIComponent("/career-copilot")}`}>Sign in securely <FiArrowRight/></Link> : error.includes("Upgrade") ? <Link to="/pricing">See Pro plans <FiArrowRight/></Link> : null}</div></div>}
         </aside>
         <section className="copilot-result">
