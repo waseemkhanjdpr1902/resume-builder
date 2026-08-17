@@ -23,7 +23,7 @@ export default function HealthcareOnboarding(){
     <section className="onboarding-card">
       {step===1&&<div className="onboarding-fields"><h2>Tell us about your healthcare background</h2>
         <label>Profession<select value={data.profession} onChange={e=>{set("profession",e.target.value);set("specialty","")}}><option value="">Select profession</option>{Object.keys(healthcareRoles).map(x=><option key={x}>{x}</option>)}</select></label>
-        <label>Clinical speciality<select disabled={!config} value={data.specialty} onChange={e=>set("specialty",e.target.value)}><option value="">Select speciality</option>{config?.specialties.map(x=><option key={x}>{x}</option>)}</select></label>
+        <label>Clinical speciality<select disabled={!config} title={!config ? "Select a profession first." : "Select clinical speciality"} value={data.specialty} onChange={e=>set("specialty",e.target.value)}><option value="">Select speciality</option>{config?.specialties.map(x=><option key={x}>{x}</option>)}</select>{!config&&<small className="control-reason">Select a profession first to see relevant specialities.</small>}</label>
         <label>Experience level<select value={data.experienceLevel} onChange={e=>set("experienceLevel",e.target.value)}><option value="">Select experience</option>{experienceLevels.map(x=><option key={x}>{x}</option>)}</select></label>
         <label>CV type<select value={data.cvType} onChange={e=>set("cvType",e.target.value)}>{cvTypes.map(x=><option key={x}>{x}</option>)}</select></label>
       </div>}

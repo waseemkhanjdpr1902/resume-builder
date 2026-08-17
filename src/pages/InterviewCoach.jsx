@@ -149,7 +149,7 @@ export default function InterviewCoach() {
       <header className="interview-top">
         <Link to="/dashboard"><FiArrowLeft /> Dashboard</Link>
         <div><span>RESUAI HEALTHCARE AI</span><strong>Interview Coach</strong></div>
-        <button className="history-button" onClick={loadHistory} disabled={loading}><FiRefreshCw /> My Interviews</button>
+        <button className="history-button" onClick={loadHistory} disabled={loading} title={loading ? "Wait for the current interview action to finish." : "View previous interviews"}><FiRefreshCw /> {loading ? "Please wait..." : "My Interviews"}</button>
       </header>
       {error && <div className="interview-error"><FiXCircle /><span>{error}</span>{error.toLowerCase().includes("sign in") && <Link to="/login?redirectTo=%2Finterview-coach">Sign in</Link>}</div>}
       {screen === "setup" && <Setup {...{ mode, setMode, personality, setPersonality, profession, setProfession, specialty, setSpecialty, experienceLevel, setExperienceLevel, targetCountry, setTargetCountry, targetRole, setTargetRole, jobDescription, setJobDescription, cvText, cvReady, fileName, upload, startInterview, loading }} />}
@@ -161,6 +161,7 @@ export default function InterviewCoach() {
 }
 
 function Setup(p) {
+  const startReason = p.loading ? "Your interview is being prepared." : !p.cvReady ? "Upload a readable PDF or Word CV to unlock interview practice." : "";
   return (
     <section className="interview-setup">
       <div className="coach-hero">
@@ -191,7 +192,8 @@ function Setup(p) {
           </div>
           <label>Target job title<input value={p.targetRole} onChange={(e) => p.setTargetRole(e.target.value)} placeholder="e.g. ICU Nurse" /></label>
           {(p.mode === "Job-Specific Interview" || p.mode === "GCC Interview") && <label>Job description<textarea value={p.jobDescription} onChange={(e) => p.setJobDescription(e.target.value)} placeholder="Paste the vacancy here..." /></label>}
-          <button type="button" className="start-interview" disabled={!p.cvReady || p.loading} onClick={p.startInterview}><FiPlay /> {p.loading ? "Preparing your interview..." : "Start AI Interview"} <FiChevronRight /></button>
+          <button type="button" className="start-interview" disabled={!p.cvReady || p.loading} aria-describedby={startReason ? "start-interview-reason" : undefined} title={startReason || "Start AI interview"} onClick={p.startInterview}><FiPlay /> {p.loading ? "Preparing your interview..." : !p.cvReady ? "Upload CV to start practice" : "Start AI Interview"} <FiChevronRight /></button>
+          {startReason ? <p id="start-interview-reason" className="control-reason"><FiFileText />{startReason}</p> : <p className="control-ready"><FiCheckCircle />Your CV is ready. You can start practising.</p>}
         </section>
       </div>
       <div className="safety-note">AI interview feedback is for preparation only. It is not a clinical decision tool, licensing prediction or hiring guarantee.</div>
@@ -206,8 +208,8 @@ function InterviewScreen(p) {
       <div className="session-head"><div><span>AI INTERVIEWER</span><h1>{p.question?.category || "Interview question"}</h1></div><div className="progress-box"><strong>Question {Math.min(p.answered + 1, p.questionCount)} of {p.questionCount}</strong><i><b style={{ width: `${progress}%` }} /></i></div></div>
       <div className="question-card"><div className="ai-avatar"><FiMic /></div><div><span>AI Interviewer</span><h2>{p.question?.question || "Loading your next question..."}</h2></div></div>
       {p.evaluation && <Evaluation evaluation={p.evaluation} />}
-      <div className="answer-card"><label htmlFor="answer">Your answer</label><textarea id="answer" value={p.answer} onChange={(e) => p.setAnswer(e.target.value)} placeholder="Answer as you would in the real interview. Use a specific example when you can..." disabled={p.loading} /><div><small>Tip: For behavioral questions, try Situation → Task → Action → Result.</small><button type="button" className="submit-answer" disabled={!p.answer.trim() || p.loading} onClick={p.submitAnswer}>{p.loading ? "AI is evaluating..." : "Submit Answer"}<FiChevronRight /></button></div></div>
-      <button type="button" className="end-interview" onClick={() => p.completeInterview()} disabled={p.loading}>End interview</button>
+      <div className="answer-card"><label htmlFor="answer">Your answer</label><textarea id="answer" value={p.answer} onChange={(e) => p.setAnswer(e.target.value)} placeholder="Answer as you would in the real interview. Use a specific example when you can..." disabled={p.loading} /><div><small>{!p.answer.trim() ? "Write an answer to enable AI feedback. Tip: use Situation → Task → Action → Result." : "Your answer is ready for AI feedback."}</small><button type="button" className="submit-answer" disabled={!p.answer.trim() || p.loading} title={p.loading ? "Your answer is being evaluated." : !p.answer.trim() ? "Write an answer before submitting." : "Submit answer"} onClick={p.submitAnswer}>{p.loading ? "AI is evaluating..." : "Submit Answer"}<FiChevronRight /></button></div></div>
+      <button type="button" className="end-interview" onClick={() => p.completeInterview()} disabled={p.loading} title={p.loading ? "Wait for the current answer evaluation to finish." : "End interview and create report"}>{p.loading ? "Finishing current evaluation..." : "End interview"}</button>
     </section>
   );
 }
