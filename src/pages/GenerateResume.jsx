@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import styled from "styled-components";
-import { Hspace } from "../components/CustomComponents";
 import { useLayout } from "../provider/layoutProvider";
 import LayoutPreview from "../components/layouts/input-layout/LayoutPreview";
 import GeneratePageFixedButtons from "../components/generatePageFixedButton";
@@ -9,6 +8,7 @@ import useLoadSavedData from "../helper/hooks/useLoadSavedData";
 import useAutoSaveWithDiff from "../helper/hooks/useAutoSaveWithDiff";
 import DividerProvider from "../provider/DividerProvider";
 import DifferentLayoutHolder from "../components/DifferentLayoutHolder";
+import CvThemeCustomizer from "../components/CvThemeCustomizer";
 import useHideOnScroll from "../helper/hooks/useHideOnScroll";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle, FiShield } from "react-icons/fi";
@@ -39,7 +39,7 @@ const GenerateResume = () => {
   const [showIcons, setShowIcons] = useState(true);
   const [isTemplateChangeModelOpen, setIsTemplateChangeModelOpen] = useState(false);
   const [isAIGenerated] = useState(() => Boolean(sessionStorage.getItem("resuai_improved_cv")));
-  const { isSavedLoaded } = useLayout();
+  const { isSavedLoaded, resumeTheme, setResumeTheme } = useLayout();
   const { layout_type, layout_id } = useParams();
   const AUTOSAVE_INTERVAL = 1000 * 60;
 
@@ -83,6 +83,7 @@ const GenerateResume = () => {
             <span><b>1</b> AI completed</span><i></i><span className="active"><b>2</b> Review</span><i></i><span><b>3</b> Download</span>
           </div>
           <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Your complete CV is ready to shine</strong><small>Review every page, then use the green button to download the full PDF.</small></span></div><Link to="/ats-checker">Back to ATS suggestions</Link></div>
+          <CvThemeCustomizer value={resumeTheme} onChange={setResumeTheme} onChangeFormat={openTemplateChangeModal} />
           <ResponsiveGrid className="preview-only" isOpen={isTemplateChangeModelOpen}>
           {/* {
             !isTemplateChangeModelOpen  && <LayoutInputField />
