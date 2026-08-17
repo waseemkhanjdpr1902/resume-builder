@@ -10,6 +10,7 @@ const Nav = () => {
         <li><StyledNavLink to="/healthcare-cv-examples">Free Resources</StyledNavLink></li>
         <li><StyledNavLink to="/ats-checker">ATS Check</StyledNavLink></li>
         <li><StyledNavLink to="/healthcare-interview-coach">Interview Coach</StyledNavLink></li>
+        <li><StyledNavLink to="/credential-readiness">Country Readiness</StyledNavLink></li>
         <li><StyledNavLink to="/pricing">Pricing</StyledNavLink></li>
       </ul>
     </nav>
