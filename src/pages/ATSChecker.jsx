@@ -57,9 +57,13 @@ export default function ATSChecker() {
       let data = await requestImprovement();
       let revised = scoreDraft({ draft: data.improved, jobDescription, role, authority });
       if (revised.score < report.score) {
-        const refined = await requestImprovement(refinementMessage(report, revised));
-        const refinedScore = scoreDraft({ draft: refined.improved, jobDescription, role, authority });
-        if (refinedScore.score >= revised.score) { data = { ...refined, refinementApplied: true }; revised = refinedScore; }
+        try {
+          const refined = await requestImprovement(refinementMessage(report, revised));
+          const refinedScore = scoreDraft({ draft: refined.improved, jobDescription, role, authority });
+          if (refinedScore.score >= revised.score) { data = { ...refined, refinementApplied: true }; revised = refinedScore; }
+        } catch {
+          data = { ...data, refinementUnavailable: true };
+        }
       }
       setResult({ ...data, evaluatedScore: revised.score }); setStage("review");
     } catch (problem) { setError(problem.message); setStage("ready"); }
@@ -92,6 +96,7 @@ export default function ATSChecker() {
         </div>
       </div> : <section className="ai-cv-review">
         <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}{result.refinementApplied ? " · ATS refinement pass applied" : ""}. Review every suggestion before applying it.</p></div><div className={`score-celebration ${scoreComparison.direction}`}><small>{scoreComparison.direction === "improved" ? "Measured ATS improvement" : "ATS baseline protected"}</small><strong>{report.score} → {potentialScore}</strong><span>{scoreComparison.delta > 0 ? "+" : ""}{scoreComparison.delta} points</span></div></header>
+        {result.refinementUnavailable ? <p className="score-refinement-note"><FiInfo/>Your first AI-enhanced draft is ready. The optional extra optimisation pass was unavailable, so your original score baseline remains protected.</p> : null}
         {measuredImprovedScore < report.score ? <p className="score-regression-note"><FiAlertCircle/>Your original {report.score}-point baseline is protected. The AI could not verify enough information to claim a higher score yet. Use the checklist below to add missing, truthful evidence.</p> : null}
         <div className="guided-progress"><div><span>GUIDED REVIEW PROGRESS</span><strong>{reviewedItems} of {reviewItems} sections reviewed</strong></div><i><b style={{ width: `${Math.round((reviewedItems / reviewItems) * 100)}%` }}/></i></div>
         <AICoach coach={result.improved.coach} topic={coachTopic} setTopic={setCoachTopic} missing={result.improved.missingInformation} score={report.score} potentialScore={potentialScore}/>

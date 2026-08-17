@@ -7,3 +7,4 @@
 @media(max-width:850px){.ai-import-grid,.review-columns{grid-template-columns:1fr}.workflow-steps i{width:24px}.ai-import-workflow{padding:18px}.ai-cv-review>header{flex-direction:column}}
 @media(max-width:540px){.workflow-steps{font-size:.68rem}.workflow-steps i{margin:0 5px}.cv-dropzone{min-height:300px;padding:24px}.resume-import-card>a{width:100%}}
 .score-celebration.regressed{border-color:#efb1b1;background:#fff4f4;color:#9f1d2d}.score-regression-note{display:flex;align-items:flex-start;gap:9px;margin:0 0 20px;padding:13px 15px;border:1px solid #efc3c3;border-radius:11px;background:#fff7f7;color:#8f2633;font-size:.82rem;line-height:1.5}.score-regression-note svg{flex:none;margin-top:2px}
+.score-refinement-note{display:flex;align-items:flex-start;gap:9px;margin:0 0 20px;padding:13px 15px;border:1px solid #b9d8d2;border-radius:11px;background:#f1faf8;color:#245d57;font-size:.82rem;line-height:1.5}.score-refinement-note svg{flex:none;margin-top:2px}
