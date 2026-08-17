@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import styled from "styled-components";
 import { useLayout } from "../provider/layoutProvider";
 import LayoutPreview from "../components/layouts/input-layout/LayoutPreview";
+import LayoutInputField from "../components/layouts/input-layout/LayoutInputField";
 import GeneratePageFixedButtons from "../components/generatePageFixedButton";
 import Loading from "../components/Loading";
 import useLoadSavedData from "../helper/hooks/useLoadSavedData";
@@ -49,11 +50,11 @@ const GenerateResume = () => {
 
   const handleShowIcon = useCallback(() => {
     setShowIcons((prev) => !prev)
-  }, [showIcons]);
+  }, []);
 
   const openTemplateChangeModal = useCallback(() => {
     setIsTemplateChangeModelOpen((prev) => !prev);
-  }, [isTemplateChangeModelOpen,showIcons]);
+  }, []);
 
 
   if (!isSavedLoaded) {
@@ -71,7 +72,7 @@ const GenerateResume = () => {
               <Link to="/templates" className="studio-back"><FiArrowLeft /> All templates</Link>
               <span className="studio-eyebrow">HEALTHCARE CV STUDIO</span>
               <h1>Your AI-improved healthcare CV is ready</h1>
-              <p>AI populated this template from your uploaded CV. Review the preview and return to the ATS report if any suggestion needs correction.</p>
+              <p>AI populated this template from your uploaded CV. Edit any field yourself, optionally add a professional photo, and review the live preview before downloading.</p>
             </div>
             <div className="studio-meta">
               <span><FiCheckCircle /> Autosave enabled</span>
@@ -84,10 +85,8 @@ const GenerateResume = () => {
           </div>
           <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Your complete CV is ready to shine</strong><small>Review every page, then use the green button to download the full PDF.</small></span></div><Link to="/ats-checker">Back to ATS suggestions</Link></div>
           <CvThemeCustomizer value={resumeTheme} onChange={setResumeTheme} onChangeFormat={openTemplateChangeModal} />
-          <ResponsiveGrid className="preview-only" isOpen={isTemplateChangeModelOpen}>
-          {/* {
-            !isTemplateChangeModelOpen  && <LayoutInputField />
-          } */}
+          <ResponsiveGrid isOpen={isTemplateChangeModelOpen}>
+          {!isTemplateChangeModelOpen && <LayoutInputField />}
           <LayoutPreview />
           </ResponsiveGrid>
         </div>
