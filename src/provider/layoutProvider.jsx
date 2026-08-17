@@ -12,7 +12,6 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import defaultFormFields from "../helper/default_form_value";
 import usePDFTextExtracter from "../helper/hooks/usePDFTextExtracter";
-import { defaultCvTheme } from "../data/cvThemes";
 
 
 
@@ -32,15 +31,10 @@ const LayoutProvider = ({ children }) => {
   const [isExtractingResumeInfo, setIsExtractingResumeInfo] = useState(false)
   const [isLayoutChooseModalOpen, setIsLayoutModalOpen] = useState()
   const[isDetailsUpdating,setDetailsUpdating]=useState(false)
-  const [resumeTheme, setResumeThemeState] = useState(() => sessionStorage.getItem("resuai_cv_theme") || defaultCvTheme)
   const fileInputRef = useRef(null)
   const sectionRefs = useRef([]);
   const pdfRef = useRef(null);
   const extractText = usePDFTextExtracter()
-  const setResumeTheme = useCallback((themeId) => {
-    sessionStorage.setItem("resuai_cv_theme", themeId)
-    setResumeThemeState(themeId)
-  }, [])
 
   const closeLayoutChooseModal = useCallback(() => {
     setIsLayoutModalOpen((prev) => !prev)
@@ -58,7 +52,7 @@ const LayoutProvider = ({ children }) => {
         phone: pd.phone || "",
         profession: pd.profession || "",
         address: pd.address || "",
-        profile: Array.isArray(pd.profile) ? pd.profile : [],
+        profile: typeof pd.profile === "string" || Array.isArray(pd.profile) ? pd.profile : [],
         urls: pd.urls || [{ value: "" }]
       },
       educations: data?.educations || defaultFormFields.educations,
@@ -236,9 +230,7 @@ const LayoutProvider = ({ children }) => {
     closeLayoutChooseModal,
     isLayoutChooseModalOpen,
     setDetailsUpdating,
-    isDetailsUpdating,
-    resumeTheme,
-    setResumeTheme
+    isDetailsUpdating
   }
   ), [
     isLoading,
@@ -262,9 +254,7 @@ const LayoutProvider = ({ children }) => {
     closeLayoutChooseModal,
     isLayoutChooseModalOpen,
     isDetailsUpdating,
-    setDetailsUpdating,
-    resumeTheme,
-    setResumeTheme
+    setDetailsUpdating
   ]);
 
   return (

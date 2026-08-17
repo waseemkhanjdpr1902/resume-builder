@@ -9,11 +9,10 @@ import useLoadSavedData from "../helper/hooks/useLoadSavedData";
 import useAutoSaveWithDiff from "../helper/hooks/useAutoSaveWithDiff";
 import DividerProvider from "../provider/DividerProvider";
 import DifferentLayoutHolder from "../components/DifferentLayoutHolder";
-import CvThemeCustomizer from "../components/CvThemeCustomizer";
 import CandidatePhotoUploader from "../components/CandidatePhotoUploader";
 import useHideOnScroll from "../helper/hooks/useHideOnScroll";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { FiArrowLeft, FiCheckCircle, FiEdit3, FiShield } from "react-icons/fi";
+import { FiArrowLeft, FiCheckCircle, FiEdit3, FiGrid, FiShield } from "react-icons/fi";
 import "../css/resume-editor.css";
 import "../css/download-experience.css";
 
@@ -42,7 +41,7 @@ const GenerateResume = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [isTemplateChangeModelOpen, setIsTemplateChangeModelOpen] = useState(false);
   const [isAIGenerated] = useState(() => Boolean(sessionStorage.getItem("resuai_improved_cv") || sessionStorage.getItem("resuai_ai_completed")));
-  const { isSavedLoaded, resumeTheme, setResumeTheme } = useLayout();
+  const { isSavedLoaded } = useLayout();
   const { layout_type, layout_id } = useParams();
   const AUTOSAVE_INTERVAL = 1000 * 60;
 
@@ -87,7 +86,7 @@ const GenerateResume = () => {
           </div>
           <div className="ai-ready-banner"><div><FiCheckCircle/><span><strong>Your PDF-derived CV is complete</strong><small>All detected information has been populated automatically. Manual entry is not required.</small></span></div><div className="ready-actions"><button type="button" onClick={() => setShowEditor((current) => !current)}><FiEdit3/>{showEditor ? "Hide editor" : "Edit details or add photo"}</button><Link to="/ats-checker">Back to ATS suggestions</Link></div></div>
           <CandidatePhotoUploader onChoosePhotoFormat={openTemplateChangeModal} />
-          <CvThemeCustomizer value={resumeTheme} onChange={setResumeTheme} onChangeFormat={openTemplateChangeModal} />
+          <div className="stable-format-toolbar"><div><span>CV FORMAT</span><strong>Neutral ATS-safe document</strong><small>Formatting is fixed for reliable A4 preview and PDF export.</small></div><button type="button" onClick={openTemplateChangeModal}><FiGrid/> Change format</button></div>
           <ResponsiveGrid className={!showEditor ? "preview-only" : ""} isOpen={isTemplateChangeModelOpen}>
           {!isTemplateChangeModelOpen && showEditor && <LayoutInputField />}
           <LayoutPreview />
