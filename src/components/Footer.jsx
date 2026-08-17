@@ -83,6 +83,12 @@ const Footer = () => {
         </div>
         <FooterLinks>
           {seoPageLinks.map(([label, path]) => <StyledNavLink key={path} to={path}>{label}</StyledNavLink>)}
+          <StyledNavLink to="/healthcare-cv-examples">CV Examples</StyledNavLink>
+          <StyledNavLink to="/gcc-eligibility-checker">GCC Checklist</StyledNavLink>
+          <StyledNavLink to="/healthcare-interview-questions">Interview Questions</StyledNavLink>
+          <StyledNavLink to="/healthcare-salary-explorer">Salary Explorer</StyledNavLink>
+          <StyledNavLink to="/application-tracker">Application Tracker</StyledNavLink>
+          <StyledNavLink to="/career-readiness-score">Readiness Score</StyledNavLink>
           <StyledNavLink to="/about">About</StyledNavLink>
           <StyledNavLink to="/privacy">Privacy</StyledNavLink>
           <StyledNavLink to="/refund-policy">Refunds</StyledNavLink>
