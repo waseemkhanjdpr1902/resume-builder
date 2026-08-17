@@ -10,7 +10,7 @@ const adminClient = () => {
 export async function canUseCareerTool(userId, feature) {
   const admin = adminClient();
   if (!admin) return { allowed: false, status: 503, error: "Free usage verification is not configured" };
-  const { data: plans } = await admin.from("subscription_records").select("plan_id,expires_at").eq("owner_id", userId).eq("status", "paid").order("created_at", { ascending: false }).limit(1);
+  const { data: plans } = await admin.from("subscription_records").select("plan_id,expires_at").eq("owner_id", userId).in("status", ["active", "paid"]).order("created_at", { ascending: false }).limit(1);
   const plan = plans?.[0];
   if (plan && (!plan.expires_at || new Date(plan.expires_at) > new Date())) return { allowed: true, pro: true, admin };
   const { data, error } = await admin.auth.admin.getUserById(userId);

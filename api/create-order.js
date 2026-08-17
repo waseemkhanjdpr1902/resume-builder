@@ -1,7 +1,11 @@
+/* global process, Buffer */
 const plans = {
   monthly: { amount: 19900, label: "Healthcare ResuAIBuilder Monthly Pro" },
   annual: { amount: 99900, label: "Healthcare ResuAIBuilder Annual Pro" },
   lifetime: { amount: 249900, label: "Healthcare ResuAIBuilder Lifetime Pro" },
+  career_early: { amount: 39900, label: "ResuAIBuilder Early Career AI – 60 Days" },
+  career_experienced: { amount: 69900, label: "ResuAIBuilder Experienced Career AI – 180 Days" },
+  career_leadership: { amount: 99900, label: "ResuAIBuilder Leadership Career AI – 365 Days" },
 };
 import { requireUser, secureJsonPost } from "./_security.js";
 

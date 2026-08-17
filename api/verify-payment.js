@@ -1,8 +1,11 @@
+/* global process, Buffer */
 import crypto from "node:crypto";
 import { requireUser, secureJsonPost } from "./_security.js";
+import { createClient } from "@supabase/supabase-js";
 
-const accessSeconds = { monthly: 30 * 86400, annual: 365 * 86400, lifetime: null };
-const planAmounts = { monthly: 19900, annual: 99900, lifetime: 249900 };
+const accessSeconds = { monthly: 30 * 86400, annual: 365 * 86400, lifetime: null, career_early: 60 * 86400, career_experienced: 180 * 86400, career_leadership: 365 * 86400 };
+const planAmounts = { monthly: 19900, annual: 99900, lifetime: 249900, career_early: 39900, career_experienced: 69900, career_leadership: 99900 };
+const recordPlan = { career_early: "monthly", career_experienced: "annual", career_leadership: "annual" };
 const encode = value => Buffer.from(JSON.stringify(value)).toString("base64url");
 const sign = (value, secret) => crypto.createHmac("sha256", secret).update(value).digest("base64url");
 
@@ -29,6 +32,14 @@ export default async function handler(request, response) {
   const matches = planId in accessSeconds && order.notes?.ownerId === user.id && payment.order_id === orderId && payment.status === "captured" && order.amount === planAmounts[planId] && payment.amount === planAmounts[planId] && order.currency === "INR" && payment.currency === "INR";
   if (!matches) return response.status(401).json({ error: "Payment details do not match this account and plan" });
   const now = Math.floor(Date.now() / 1000);
-  const payload = encode({ planId, paymentId, userId: user.id, issuedAt: now, expiresAt: accessSeconds[planId] ? now + accessSeconds[planId] : null });
+  const expiresAt = accessSeconds[planId] ? now + accessSeconds[planId] : null;
+  const dbUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (dbUrl && serviceKey) {
+    const admin = createClient(dbUrl, serviceKey, { auth: { persistSession: false } });
+    const { error: recordError } = await admin.from("subscription_records").upsert({ owner_id: user.id, provider_event_id: `verified_${paymentId}`, provider_payment_id: paymentId, provider_order_id: orderId, plan_id: recordPlan[planId] || planId, status: "active", starts_at: new Date(now * 1000).toISOString(), expires_at: expiresAt ? new Date(expiresAt * 1000).toISOString() : null, amount_minor: payment.amount, currency: payment.currency }, { onConflict: "provider_event_id" });
+    if (recordError) console.error("Verified entitlement record failed", recordError.message);
+  }
+  const payload = encode({ planId, paymentId, userId: user.id, issuedAt: now, expiresAt });
   return response.status(200).json({ token: `${payload}.${sign(payload, secret)}`, planId });
 }
