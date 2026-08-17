@@ -3,12 +3,13 @@ import { FiArrowRight, FiCheck, FiSearch, FiShield, FiTarget, FiUsers } from "re
 import { Link } from "react-router-dom";
 import { healthcareTracks, professionalTemplates } from "../static-data/professional-templates";
 import "../css/template-gallery.css";
+import "../css/template-variants.css";
 
 const atsTone = { Excellent: "ats-excellent", Strong: "ats-strong" };
 
 function ResumePreview({ template }) {
   const { sample } = template;
-  return <div className="cv-sheet" style={{ "--cv-accent": template.accent }} aria-label={`Full ${template.name} CV preview`}>
+  return <div className={`cv-sheet cv-${template.id}`} style={{ "--cv-accent": template.accent }} aria-label={`Full ${template.name} CV preview`}>
     <header><h3>{sample.name}</h3><p>{sample.title}</p><small>email@example.com · +00 000 000 0000 · City, Country</small></header>
     <section><h4>Professional profile</h4><p>Compassionate healthcare professional delivering safe, evidence-based care through clear communication and multidisciplinary collaboration.</p></section>
     <section><h4>Registration & credentials</h4><p>{sample.credentials}</p></section>
