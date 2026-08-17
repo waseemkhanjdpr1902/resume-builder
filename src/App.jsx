@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import AppRoutes from './components/AppRoutes'
 import SEO from './components/SEO'
 import './css/navbar.css'
+import './css/premium-experience.css'
 
 
 
