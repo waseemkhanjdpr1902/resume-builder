@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiAlertCircle, FiArrowRight, FiCheckCircle, FiEdit3, FiFileText, FiInfo, FiMessageCircle, FiSearch, FiThumbsUp, FiUploadCloud, FiUser, FiZap } from "react-icons/fi";
 import { countryGuidance, healthcareRoles } from "../data/healthcareContent";
-import { scoreHealthcareCV } from "../utils/atsScoring";
+import { compareAtsScores, cvDraftToScoringText, scoreHealthcareCV } from "../utils/atsScoring";
 import { readCVFile } from "../utils/cvFileReader";
 import "../css/healthcare-tools.css";
 import "../css/ats-report.css";
@@ -31,9 +31,9 @@ export default function ATSChecker() {
   const [coachTopic, setCoachTopic] = useState("welcome");
   const authority = countryGuidance[country]?.authorities?.[0] || "";
   const report = useMemo(() => scoreHealthcareCV({ cvText, jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }), [cvText, jobDescription, role, authority]);
-  const improvedReport = useMemo(() => result?.improved ? scoreHealthcareCV({ cvText: JSON.stringify(result.improved), jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }) : null, [result, jobDescription, role, authority]);
-  const potentialScore = improvedReport?.score || report.score;
-  const scoreGain = Math.max(0, potentialScore - report.score);
+  const improvedReport = useMemo(() => result?.improved ? scoreHealthcareCV({ cvText: cvDraftToScoringText(result.improved), jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }) : null, [result, jobDescription, role, authority]);
+  const potentialScore = improvedReport?.score ?? report.score;
+  const scoreComparison = compareAtsScores(report.score, potentialScore);
 
   const chooseFile = async (file) => {
     if (!file) return;
@@ -78,7 +78,8 @@ export default function ATSChecker() {
           <p className="privacy-inline"><FiInfo/>Do not upload patient records, passport numbers or other sensitive identifiers.</p>
         </div>
       </div> : <section className="ai-cv-review">
-        <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}. Review every suggestion before applying it.</p></div><div className="score-celebration"><small>Potential ATS lift</small><strong>{report.score} → {potentialScore}</strong><span>+{scoreGain} points</span></div></header>
+        <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}. Review every suggestion before applying it.</p></div><div className={`score-celebration ${scoreComparison.direction}`}><small>{scoreComparison.direction === "regressed" ? "Draft needs another review" : "Revised ATS score"}</small><strong>{report.score} → {potentialScore}</strong><span>{scoreComparison.delta > 0 ? "+" : ""}{scoreComparison.delta} points</span></div></header>
+        {scoreComparison.direction === "regressed" ? <p className="score-regression-note"><FiAlertCircle/>The revised draft scored lower on the same checks. Review missing credentials, role keywords and source content before building the final CV.</p> : null}
         <div className="guided-progress"><div><span>GUIDED REVIEW PROGRESS</span><strong>{reviewedItems} of {reviewItems} sections reviewed</strong></div><i><b style={{ width: `${Math.round((reviewedItems / reviewItems) * 100)}%` }}/></i></div>
         <AICoach coach={result.improved.coach} topic={coachTopic} setTopic={setCoachTopic} missing={result.improved.missingInformation} score={report.score} potentialScore={potentialScore}/>
         <div className="review-columns"><div className="improved-content"><ReviewCard title="Professional summary" reason={result.improved.coach?.summaryReason} decision={decisions.summary} onDecision={(value) => markDecision("summary", value)}><textarea aria-label="Professional summary" value={result.improved.summary || ""} onChange={(event) => updateSummary(event.target.value)}/></ReviewCard>{emptyArray(result.improved.experiences).map((experience, experienceIndex) => <ReviewCard key={`${experience.company_name}-${experienceIndex}`} title={experience.position || `Experience ${experienceIndex + 1}`} subtitle={`${experience.company_name || "Employer"} · ${experience.start_date || ""}–${experience.end_date || ""}`} reason={result.improved.coach?.experienceReason} decision={decisions[`experience-${experienceIndex}`]} onDecision={(value) => markDecision(`experience-${experienceIndex}`, value)}>{emptyArray(experience.achievements).map((bullet, bulletIndex) => <textarea aria-label={`Experience bullet ${bulletIndex + 1}`} key={bulletIndex} value={bullet.value || ""} onChange={(event) => updateBullet(experienceIndex, bulletIndex, event.target.value)}/>)}</ReviewCard>)}</div>
