@@ -14,6 +14,8 @@ const normaliseDraft = (draft) => ({
   personalDetails: { name: draft.personalDetails?.name || "", email: draft.personalDetails?.email || "", phone: draft.personalDetails?.phone || "", profession: draft.personalDetails?.profession || draft.detectedRole || "Healthcare Professional", address: draft.personalDetails?.address || "", profile: [], urls: emptyArray(draft.personalDetails?.urls).length ? draft.personalDetails.urls : [{ value: "" }] },
   summary: draft.summary || "", educations: emptyArray(draft.educations), experiences: emptyArray(draft.experiences), skills: emptyArray(draft.skills), certificates: emptyArray(draft.certificates), trainings: emptyArray(draft.trainings), languages: emptyArray(draft.languages), achievements: emptyArray(draft.achievements), additionalSections: emptyArray(draft.additionalSections),
 });
+const scoreDraft = ({ draft, jobDescription, role, authority }) => scoreHealthcareCV({ cvText: cvDraftToScoringText(draft), jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority });
+const refinementMessage = (current, revised) => `${revised.checks.filter((check) => check.points < check.max).map((check) => `${check.label}: ${check.correction}`).join("\n")}\nThe source CV scored ${current.score}; preserve all supported source evidence and do not weaken its ATS performance.`;
 
 export default function ATSChecker() {
   const navigate = useNavigate();
@@ -32,7 +34,8 @@ export default function ATSChecker() {
   const authority = countryGuidance[country]?.authorities?.[0] || "";
   const report = useMemo(() => scoreHealthcareCV({ cvText, jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }), [cvText, jobDescription, role, authority]);
   const improvedReport = useMemo(() => result?.improved ? scoreHealthcareCV({ cvText: cvDraftToScoringText(result.improved), jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }) : null, [result, jobDescription, role, authority]);
-  const potentialScore = improvedReport?.score ?? report.score;
+  const measuredImprovedScore = result?.evaluatedScore ?? improvedReport?.score ?? report.score;
+  const potentialScore = Math.max(report.score, measuredImprovedScore);
   const scoreComparison = compareAtsScores(report.score, potentialScore);
 
   const chooseFile = async (file) => {
@@ -45,10 +48,20 @@ export default function ATSChecker() {
   const improveCV = async () => {
     setError(""); setStage("improving");
     try {
-      const response = await fetch("/api/improve-cv", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cvText, jobDescription, targetCountry: country }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not improve this CV.");
-      setResult(data); setStage("review");
+      const requestImprovement = async (refinementFeedback = "") => {
+        const response = await fetch("/api/improve-cv", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cvText, jobDescription, targetCountry: country, refinementFeedback }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not improve this CV.");
+        return data;
+      };
+      let data = await requestImprovement();
+      let revised = scoreDraft({ draft: data.improved, jobDescription, role, authority });
+      if (revised.score < report.score) {
+        const refined = await requestImprovement(refinementMessage(report, revised));
+        const refinedScore = scoreDraft({ draft: refined.improved, jobDescription, role, authority });
+        if (refinedScore.score >= revised.score) { data = { ...refined, refinementApplied: true }; revised = refinedScore; }
+      }
+      setResult({ ...data, evaluatedScore: revised.score }); setStage("review");
     } catch (problem) { setError(problem.message); setStage("ready"); }
   };
 
@@ -78,8 +91,8 @@ export default function ATSChecker() {
           <p className="privacy-inline"><FiInfo/>Do not upload patient records, passport numbers or other sensitive identifiers.</p>
         </div>
       </div> : <section className="ai-cv-review">
-        <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}. Review every suggestion before applying it.</p></div><div className={`score-celebration ${scoreComparison.direction}`}><small>{scoreComparison.direction === "regressed" ? "Draft needs another review" : "Revised ATS score"}</small><strong>{report.score} → {potentialScore}</strong><span>{scoreComparison.delta > 0 ? "+" : ""}{scoreComparison.delta} points</span></div></header>
-        {scoreComparison.direction === "regressed" ? <p className="score-regression-note"><FiAlertCircle/>The revised draft scored lower on the same checks. Review missing credentials, role keywords and source content before building the final CV.</p> : null}
+        <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}{result.refinementApplied ? " · ATS refinement pass applied" : ""}. Review every suggestion before applying it.</p></div><div className={`score-celebration ${scoreComparison.direction}`}><small>{scoreComparison.direction === "improved" ? "Measured ATS improvement" : "ATS baseline protected"}</small><strong>{report.score} → {potentialScore}</strong><span>{scoreComparison.delta > 0 ? "+" : ""}{scoreComparison.delta} points</span></div></header>
+        {measuredImprovedScore < report.score ? <p className="score-regression-note"><FiAlertCircle/>Your original {report.score}-point baseline is protected. The AI could not verify enough information to claim a higher score yet. Use the checklist below to add missing, truthful evidence.</p> : null}
         <div className="guided-progress"><div><span>GUIDED REVIEW PROGRESS</span><strong>{reviewedItems} of {reviewItems} sections reviewed</strong></div><i><b style={{ width: `${Math.round((reviewedItems / reviewItems) * 100)}%` }}/></i></div>
         <AICoach coach={result.improved.coach} topic={coachTopic} setTopic={setCoachTopic} missing={result.improved.missingInformation} score={report.score} potentialScore={potentialScore}/>
         <div className="review-columns"><div className="improved-content"><ReviewCard title="Professional summary" reason={result.improved.coach?.summaryReason} decision={decisions.summary} onDecision={(value) => markDecision("summary", value)}><textarea aria-label="Professional summary" value={result.improved.summary || ""} onChange={(event) => updateSummary(event.target.value)}/></ReviewCard>{emptyArray(result.improved.experiences).map((experience, experienceIndex) => <ReviewCard key={`${experience.company_name}-${experienceIndex}`} title={experience.position || `Experience ${experienceIndex + 1}`} subtitle={`${experience.company_name || "Employer"} · ${experience.start_date || ""}–${experience.end_date || ""}`} reason={result.improved.coach?.experienceReason} decision={decisions[`experience-${experienceIndex}`]} onDecision={(value) => markDecision(`experience-${experienceIndex}`, value)}>{emptyArray(experience.achievements).map((bullet, bulletIndex) => <textarea aria-label={`Experience bullet ${bulletIndex + 1}`} key={bulletIndex} value={bullet.value || ""} onChange={(event) => updateBullet(experienceIndex, bulletIndex, event.target.value)}/>)}</ReviewCard>)}</div>
