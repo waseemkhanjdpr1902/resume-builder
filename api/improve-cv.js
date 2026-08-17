@@ -3,6 +3,17 @@ import { secureJsonPost } from "./_security.js";
 const limits = new Map();
 const clean = (value, max = 50000) => String(value || "").replace(/[<>]/g, "").slice(0, max);
 const rateLimited = (request) => { const key = (request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown").split(",")[0]; const now = Date.now(); const entry = limits.get(key) || { start: now, count: 0 }; if (now - entry.start > 60000) { entry.start = now; entry.count = 0; } entry.count += 1; limits.set(key, entry); return entry.count > 5; };
+const fetchWithTimeout = async (url, options, timeoutMs = 45_000) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try { return await fetch(url, { ...options, signal: controller.signal }); }
+  finally { clearTimeout(timer); }
+};
+const providerError = async (provider, response) => {
+  let code = "unknown";
+  try { code = (await response.json())?.error?.code || "unknown"; } catch { /* provider returned no JSON */ }
+  return new Error(`${provider} request failed (${response.status}, ${code})`);
+};
 
 const system = `You are a healthcare CV specialist. Transform the supplied CV into a concise, globally usable ATS-friendly healthcare CV. Use only facts explicitly present in the CV. Never invent employers, dates, qualifications, licences, registrations, clinical competence, patient volumes, achievements or metrics. Preserve contact details exactly. Where an important fact is absent, add it to missingInformation, never into the CV as a claim. Naturally align verified experience with the supplied job description. Return valid JSON only, with no markdown.`;
 const schema = `{"detectedRole":"","targetHeadline":"","personalDetails":{"name":"","email":"","phone":"","profession":"","address":"","profile":"","urls":[{"value":""}]},"summary":"","skills":[{"field":"Clinical competencies","items":[{"value":""}]}],"experiences":[{"company_name":"","position":"","about_company":"","start_date":"","end_date":"","location":"","achievements":[{"value":""}]}],"educations":[{"university":"","degree":"","start_year":"","end_year":"","gpa":"","address":""}],"certificates":[{"certificate":"","subject":"","date":""}],"trainings":[{"title":"","organization":"","year":"","location":""}],"languages":[{"language":"","proficiency":""}],"achievements":[{"achievement":"","field":"","date":""}],"missingInformation":[""],"verificationChecklist":[""],"improvements":[""],"coach":{"welcome":"","scoreExplanation":"","summaryReason":"","experienceReason":"","nextStep":""}}`;
@@ -21,8 +32,8 @@ const enforceSourceDates = (draft, source) => {
 };
 
 const providers = {
-  openai: async (prompt) => { const key = process.env.OPENAI_API_KEY; if (!key) return null; const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4.1-mini", temperature: .15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) }); if (!r.ok) throw new Error("OpenAI request failed"); const j = await r.json(); return j.choices?.[0]?.message?.content; },
-  groq: async (prompt) => { const key = process.env.GROQ_API_KEY; if (!key) return null; const r = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile", temperature: .15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) }); if (!r.ok) throw new Error("Groq request failed"); const j = await r.json(); return j.choices?.[0]?.message?.content; },
+  openai: async (prompt) => { const key = process.env.OPENAI_API_KEY; if (!key) return null; const r = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4.1-mini", temperature: .15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) }); if (!r.ok) throw await providerError("OpenAI", r); const j = await r.json(); return j.choices?.[0]?.message?.content; },
+  groq: async (prompt) => { const key = process.env.GROQ_API_KEY; if (!key) return null; const r = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.GROQ_MODEL || "openai/gpt-oss-20b", temperature: .15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) }); if (!r.ok) throw await providerError("Groq", r); const j = await r.json(); return j.choices?.[0]?.message?.content; },
 };
 
 export default async function handler(request, response) {
