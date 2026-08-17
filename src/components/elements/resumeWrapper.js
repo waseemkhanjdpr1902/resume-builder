@@ -1,12 +1,15 @@
 import styled from "styled-components";
 
-export const ResumeWrapper = styled.div`
+export const ResumeWrapper = styled.div.attrs({ "data-resume-page": "true" })`
   width: 210mm;
   height: 297mm;
+  box-sizing: border-box;
   padding:${({ padding }) => padding || "20mm"};
   background: white;
   margin:10px auto;
   overflow:hidden;
+  overflow-wrap: break-word;
+  word-break: normal;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   @media print {
     margin: 0;
@@ -149,4 +152,3 @@ export const FlexResumeWrapper = styled(ResumeWrapper)`
   display: flex;
   padding:0;
 `;
-

@@ -19,11 +19,11 @@ height:${({ height }) => height || "80px"};
 // LiaLinkSolid
 const GenerateLi = ({ icon, text, style }) => {
     return (
-        <Li {...style.profile_li}>
+        <Li {...style.profile_li} style={{ ...style.profile_li, minWidth: 0, maxWidth: "100%" }}>
             <IconHolder>
                 {icon}
             </IconHolder>
-            <span style={{ color: style?.profile_li.color }}>
+            <span style={{ color: style?.profile_li.color, overflowWrap: "anywhere" }}>
                 {text}
             </span>
         </Li>
@@ -134,7 +134,7 @@ const generateResumeHeader = ({ personalDetails, style, props }) => {
     const Image = <img src={`${imageUrl}`} alt="image"></img>
     const RoundedImage = <div className="flex justify-center items-center content-center"><Avatar margin="0">{Image}</Avatar></div>
     const RectangularImage = <RectangularContainer>{Image}</RectangularContainer>
-    const Name = <h1 style={{ ...style?.nameStyle }}>{name}</h1>
+    const Name = <h1 style={{ ...style?.nameStyle, maxWidth: "100%", overflowWrap: "break-word", lineHeight: 1.15 }}>{name}</h1>
     if (flexImage && shouldIncludeImage) {
         return (
             <FlexBox backgroundColor={style.headerBg} margin="0"
