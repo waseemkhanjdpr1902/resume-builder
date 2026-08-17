@@ -13,6 +13,7 @@ import { useAuth } from "../provider/AuthProvider";
 import { hasDownloadAccess } from "../services/payments";
 import { FiArrowRight, FiCheckCircle, FiFileText, FiGlobe, FiGrid, FiHeart, FiLayers, FiMic, FiSearch, FiShield, FiTarget, FiZap, FiPlus, FiChevronRight } from "react-icons/fi";
 import "../css/dashboard.css";
+import { TESTING_ACCESS_ENABLED } from "../config/testingAccess";
 
 const ResumePreview = React.memo(({ closePreviewModal }) => <ScrollableModal onClose={closePreviewModal} header="Resume Preview"><ClassicalLayout1 /></ScrollableModal>);
 
@@ -44,7 +45,7 @@ const Dashboard = () => {
         <Link to="/practice-questions"><FiCheckCircle /> Practice Questions</Link>
         <Link to="/healthcare-guide"><FiHeart /> Healthcare CV Guide</Link>
         <Link to="/cover-letter"><FiFileText /> Cover Letter</Link>
-        <div className="sidebar-bottom"><FiShield /><div><span>{hasPremium ? "PREMIUM ACCESS" : "FREE WORKSPACE"}</span><strong>{hasPremium ? "Downloads unlocked" : "Upgrade when ready"}</strong></div></div>
+        <div className="sidebar-bottom"><FiShield /><div><span>{TESTING_ACCESS_ENABLED ? "TESTING ACCESS" : hasPremium ? "PREMIUM ACCESS" : "FREE WORKSPACE"}</span><strong>{TESTING_ACCESS_ENABLED || hasPremium ? "All features unlocked" : "Upgrade when ready"}</strong></div></div>
       </aside>
 
       <main className="workspace-main">
