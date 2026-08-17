@@ -32,6 +32,49 @@ export const parseProviderJson = (raw) => {
 const system = `You are a healthcare CV specialist. Transform the supplied CV into a complete, globally usable ATS-friendly healthcare CV. Use only facts explicitly present in the CV. Never invent employers, dates, qualifications, licences, registrations, clinical competence, patient volumes, achievements or metrics. Preserve contact details exactly. PRESERVATION IS MANDATORY: retain every employer, job title, date, qualification, licence, registration, certification, training, language, publication, research item, membership, award and other career fact found in the source. Improve wording and organisation, but never shorten the CV by deleting verified information. Put content that does not fit a named field into additionalSections. Where an important fact is absent, add it to missingInformation, never into the CV as a claim. Naturally align verified experience with the supplied job description. Return valid JSON only, with no markdown.`;
 const schema = `{"detectedRole":"","targetHeadline":"","personalDetails":{"name":"","email":"","phone":"","profession":"","address":"","profile":"","urls":[{"value":""}]},"summary":"","skills":[{"field":"Clinical competencies","items":[{"value":""}]}],"experiences":[{"company_name":"","position":"","about_company":"","start_date":"","end_date":"","location":"","achievements":[{"value":""}]}],"educations":[{"university":"","degree":"","start_year":"","end_year":"","gpa":"","address":""}],"certificates":[{"certificate":"","subject":"","date":""}],"trainings":[{"title":"","organization":"","year":"","location":""}],"languages":[{"language":"","proficiency":""}],"achievements":[{"achievement":"","field":"","date":""}],"additionalSections":[{"title":"Research and publications","items":[{"value":""}]}],"missingInformation":[""],"verificationChecklist":[""],"improvements":[""],"coach":{"welcome":"","scoreExplanation":"","summaryReason":"","experienceReason":"","nextStep":""}}`;
 const sourceContains = (source, value) => !value || String(value).toLowerCase() === "present" || source.toLowerCase().includes(String(value).toLowerCase());
+const headingType = (line) => {
+  const value = line.toLowerCase().replace(/[^a-z& ]/g, " ").replace(/\s+/g, " ").trim();
+  if (/^(professional )?(summary|profile|objective)$/.test(value)) return "summary";
+  if (/^(professional |work |clinical )?(experience|employment|career history)$/.test(value)) return "experience";
+  if (/^(education|qualifications?|academic background)$/.test(value)) return "education";
+  if (/^(clinical |core |technical )?(skills|competencies|expertise)$/.test(value)) return "skills";
+  if (/^(licen[cs]es?|registration|certifications?|credentials)( & certifications?)?$/.test(value)) return "certificates";
+  if (/^(training|courses?|continuing education|professional development)$/.test(value)) return "trainings";
+  if (/^languages?$/.test(value)) return "languages";
+  return "";
+};
+
+export const buildSourcePreservingDraft = (sourceText) => {
+  const source = clean(sourceText);
+  const lines = source.split(/\r?\n/).map((line) => line.replace(/^\s*[•·▪*-]\s*/, "").trim()).filter(Boolean);
+  const grouped = { summary: [], experience: [], education: [], skills: [], certificates: [], trainings: [], languages: [], other: [] };
+  let section = "other";
+  for (const line of lines) { const type = headingType(line); if (type) section = type; else grouped[section].push(line); }
+  const email = source.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || "";
+  const phone = source.match(/\+?\d[\d\s()-]{7,}\d/)?.[0]?.trim() || "";
+  const urls = source.match(/(?:https?:\/\/|www\.|linkedin\.com\/)[^\s,;]+/gi) || [];
+  const identityLines = lines.filter((line) => !headingType(line) && line !== email && line !== phone && !line.includes("@"));
+  const name = identityLines.find((line) => line.length >= 3 && line.length <= 80 && !/\d/.test(line)) || "Healthcare Professional";
+  const profession = identityLines.find((line) => line !== name && line.length <= 100 && !/\d/.test(line)) || "Healthcare Professional";
+  const summaryLines = grouped.summary.length ? grouped.summary : identityLines.filter((line) => line !== name && line !== profession).slice(0, 4);
+  const experienceLines = grouped.experience.length ? grouped.experience : lines.filter((line) => !headingType(line)).slice(0, 40);
+  const known = new Set([...grouped.summary, ...grouped.experience, ...grouped.education, ...grouped.skills, ...grouped.certificates, ...grouped.trainings, ...grouped.languages]);
+  const remaining = lines.filter((line) => !headingType(line) && !known.has(line) && line !== name && line !== profession && line !== email && line !== phone);
+  return enforceSourceDates({
+    detectedRole: profession, targetHeadline: profession,
+    personalDetails: { name, email, phone, profession, address: "", profile: "", urls: urls.map((value) => ({ value })) },
+    summary: summaryLines.join(" ").slice(0, 1200),
+    skills: grouped.skills.length ? [{ field: "Clinical competencies", items: grouped.skills.map((value) => ({ value })) }] : [],
+    experiences: experienceLines.length ? [{ company_name: "", position: "Professional experience", about_company: "", start_date: "", end_date: "", location: "", achievements: experienceLines.map((value) => ({ value })) }] : [],
+    educations: grouped.education.map((degree) => ({ university: "", degree, start_year: "", end_year: "", gpa: "", address: "" })),
+    certificates: grouped.certificates.map((certificate) => ({ certificate, subject: "", date: "" })),
+    trainings: grouped.trainings.map((title) => ({ title, organization: "", year: "", location: "" })),
+    languages: grouped.languages.map((language) => ({ language, proficiency: "" })), achievements: [],
+    additionalSections: remaining.length ? [{ title: "Additional information from uploaded CV", items: remaining.map((value) => ({ value })) }] : [],
+    missingInformation: ["AI enhancement is temporarily limited; verify the source-preserving draft before download."],
+    verificationChecklist: [], improvements: ["Preserved readable information from the uploaded CV", "Organised detected content under standard ATS headings"], coach: {}
+  }, source);
+};
 const enforceSourceDates = (draft, source) => {
   const strip = (items, fields) => Array.isArray(items) && items.forEach((item) => fields.forEach((field) => { if (!sourceContains(source, item?.[field])) item[field] = ""; }));
   strip(draft.experiences, ["start_date", "end_date"]);
@@ -86,5 +129,6 @@ export default async function handler(request, response) {
       console.error(`CV improvement provider ${name} failed`, error instanceof Error ? error.message : "Unknown error");
     }
   }
-  return response.status(502).json({ error: "AI CV improvement is temporarily unavailable." });
+  console.warn("All AI CV providers unavailable; returning source-preserving local fallback.");
+  return response.status(200).json({ improved: buildSourcePreservingDraft(String(cvText)), provider: "source-preserving fallback", requiresVerification: true, fallbackUsed: true });
 }
