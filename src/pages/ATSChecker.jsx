@@ -12,7 +12,7 @@ const scoreLabels = { atsReadability: "ATS readability", jobMatch: "JD match", c
 const emptyArray = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
 const normaliseDraft = (draft) => ({
   personalDetails: { name: draft.personalDetails?.name || "", email: draft.personalDetails?.email || "", phone: draft.personalDetails?.phone || "", profession: draft.personalDetails?.profession || draft.detectedRole || "Healthcare Professional", address: draft.personalDetails?.address || "", profile: [], urls: emptyArray(draft.personalDetails?.urls).length ? draft.personalDetails.urls : [{ value: "" }] },
-  summary: draft.summary || "", educations: emptyArray(draft.educations), experiences: emptyArray(draft.experiences), skills: emptyArray(draft.skills), certificates: emptyArray(draft.certificates), trainings: emptyArray(draft.trainings), languages: emptyArray(draft.languages), achievements: emptyArray(draft.achievements),
+  summary: draft.summary || "", educations: emptyArray(draft.educations), experiences: emptyArray(draft.experiences), skills: emptyArray(draft.skills), certificates: emptyArray(draft.certificates), trainings: emptyArray(draft.trainings), languages: emptyArray(draft.languages), achievements: emptyArray(draft.achievements), additionalSections: emptyArray(draft.additionalSections),
 });
 
 export default function ATSChecker() {
