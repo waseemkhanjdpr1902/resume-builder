@@ -1,11 +1,16 @@
 /* global process */
 import { createClient } from "@supabase/supabase-js";
 import { requireUser, secureJsonPost } from "./_security.js";
+import { isTestingAccessEnabled } from "./_testing-access.js";
 
 export default async function handler(request, response) {
   if (!secureJsonPost(request, response, 8_000)) return;
   const user = await requireUser(request, response);
   if (!user) return;
+
+  if (isTestingAccessEnabled()) {
+    return response.status(200).json({ granted: true, access: "testing" });
+  }
 
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

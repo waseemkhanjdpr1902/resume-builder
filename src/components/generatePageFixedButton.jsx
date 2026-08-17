@@ -10,6 +10,7 @@ import ToolTip from "./Tooltip";
 import ProgressBarModal from "./ModalWithProgressBar";
 import FixedIconWrapper from "./FixedIconWrapper";
 import DownloadPaywall from "./DownloadPaywall";
+import { TESTING_ACCESS_ENABLED } from "../config/testingAccess";
 
 const GeneratePageFixedButtons = memo(
   ({ setShowIcons, showIcons, setIsTemplateChangeModelOpen }) => {
@@ -71,6 +72,11 @@ const GeneratePageFixedButtons = memo(
       // A failed render should never consume the user's free download.
       const file = await createCompletePDF();
       if (!file) return;
+
+      if (TESTING_ACCESS_ENABLED) {
+        await deliverFile(file);
+        return;
+      }
 
       if (await hasDownloadAccess()) {
         await deliverFile(file);

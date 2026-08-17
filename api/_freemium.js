@@ -1,5 +1,6 @@
 /* global process */
 import { createClient } from "@supabase/supabase-js";
+import { isTestingAccessEnabled } from "./_testing-access.js";
 
 const adminClient = () => {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -8,6 +9,7 @@ const adminClient = () => {
 };
 
 export async function canUseCareerTool(userId, feature) {
+  if (isTestingAccessEnabled()) return { allowed: true, pro: true, testing: true };
   const admin = adminClient();
   if (!admin) return { allowed: false, status: 503, error: "Free usage verification is not configured" };
   const { data: plans } = await admin.from("subscription_records").select("plan_id,expires_at").eq("owner_id", userId).in("status", ["active", "paid"]).order("created_at", { ascending: false }).limit(1);
@@ -21,7 +23,7 @@ export async function canUseCareerTool(userId, feature) {
 }
 
 export async function recordCareerToolUse(userId, access) {
-  if (access.pro) return true;
+  if (access.pro || access.testing) return true;
   const { error } = await access.admin.auth.admin.updateUserById(userId, { app_metadata: { ...access.metadata, [access.key]: new Date().toISOString() } });
   return !error;
 }
