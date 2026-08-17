@@ -12,6 +12,7 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import defaultFormFields from "../helper/default_form_value";
 import usePDFTextExtracter from "../helper/hooks/usePDFTextExtracter";
+import { defaultCvTheme } from "../data/cvThemes";
 
 
 
@@ -31,10 +32,15 @@ const LayoutProvider = ({ children }) => {
   const [isExtractingResumeInfo, setIsExtractingResumeInfo] = useState(false)
   const [isLayoutChooseModalOpen, setIsLayoutModalOpen] = useState()
   const[isDetailsUpdating,setDetailsUpdating]=useState(false)
+  const [resumeTheme, setResumeThemeState] = useState(() => sessionStorage.getItem("resuai_cv_theme") || defaultCvTheme)
   const fileInputRef = useRef(null)
   const sectionRefs = useRef([]);
   const pdfRef = useRef(null);
   const extractText = usePDFTextExtracter()
+  const setResumeTheme = useCallback((themeId) => {
+    sessionStorage.setItem("resuai_cv_theme", themeId)
+    setResumeThemeState(themeId)
+  }, [])
 
   const closeLayoutChooseModal = useCallback(() => {
     setIsLayoutModalOpen((prev) => !prev)
@@ -228,7 +234,9 @@ const LayoutProvider = ({ children }) => {
     closeLayoutChooseModal,
     isLayoutChooseModalOpen,
     setDetailsUpdating,
-    isDetailsUpdating
+    isDetailsUpdating,
+    resumeTheme,
+    setResumeTheme
   }
   ), [
     isLoading,
@@ -252,7 +260,9 @@ const LayoutProvider = ({ children }) => {
     closeLayoutChooseModal,
     isLayoutChooseModalOpen,
     isDetailsUpdating,
-    setDetailsUpdating
+    setDetailsUpdating,
+    resumeTheme,
+    setResumeTheme
   ]);
 
   return (

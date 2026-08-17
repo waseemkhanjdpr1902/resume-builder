@@ -106,7 +106,7 @@ const DifferentLayoutHolder = memo(({ isOpen, onHide }) => {
 
   return (
     <Wrapper isOpen={isOpen}>
-      <H2>Try Different Resume Layouts</H2>
+      <H2>Choose a CV Format</H2>
       <LineDivider backgroundColor={theme.colors.text} />
       <Hspace height="10px"/>
       <ScrollableWrapper>
