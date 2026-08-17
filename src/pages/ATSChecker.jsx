@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiAlertCircle, FiArrowRight, FiCheckCircle, FiFileText, FiInfo, FiSearch, FiUploadCloud, FiZap } from "react-icons/fi";
+import { FiAlertCircle, FiArrowRight, FiCheckCircle, FiEdit3, FiFileText, FiInfo, FiMessageCircle, FiSearch, FiThumbsUp, FiUploadCloud, FiUser, FiZap } from "react-icons/fi";
 import { countryGuidance, healthcareRoles } from "../data/healthcareContent";
 import { scoreHealthcareCV } from "../utils/atsScoring";
 import { readCVFile } from "../utils/cvFileReader";
@@ -27,6 +27,8 @@ export default function ATSChecker() {
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [decisions, setDecisions] = useState({});
+  const [coachTopic, setCoachTopic] = useState("welcome");
   const authority = countryGuidance[country]?.authorities?.[0] || "";
   const report = useMemo(() => scoreHealthcareCV({ cvText, jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }), [cvText, jobDescription, role, authority]);
   const improvedReport = useMemo(() => result?.improved ? scoreHealthcareCV({ cvText: JSON.stringify(result.improved), jobDescription, roleConfig: healthcareRoles[role], licenceAuthority: authority }) : null, [result, jobDescription, role, authority]);
@@ -35,7 +37,7 @@ export default function ATSChecker() {
 
   const chooseFile = async (file) => {
     if (!file) return;
-    setError(""); setStage("reading"); setResult(null); setConfirmed(false); sessionStorage.removeItem("resuai_improved_cv"); sessionStorage.removeItem("resuai_ai_completed");
+    setError(""); setStage("reading"); setResult(null); setConfirmed(false); setDecisions({}); setCoachTopic("welcome"); sessionStorage.removeItem("resuai_improved_cv"); sessionStorage.removeItem("resuai_ai_completed");
     try { const text = await readCVFile(file); setCvText(text); setFileName(file.name); setStage("ready"); }
     catch (problem) { setError(problem.message); setStage("upload"); }
   };
@@ -52,29 +54,34 @@ export default function ATSChecker() {
 
   const updateSummary = (value) => setResult((current) => ({ ...current, improved: { ...current.improved, summary: value } }));
   const updateBullet = (experienceIndex, bulletIndex, value) => setResult((current) => { const improved = structuredClone(current.improved); improved.experiences[experienceIndex].achievements[bulletIndex].value = value; return { ...current, improved }; });
+  const reviewItems = 1 + emptyArray(result?.improved?.experiences).length;
+  const reviewedItems = Object.keys(decisions).length;
+  const markDecision = (key, decision) => setDecisions((current) => ({ ...current, [key]: decision }));
   const buildInTemplate = () => { sessionStorage.setItem("resuai_improved_cv", JSON.stringify(normaliseDraft(result.improved))); sessionStorage.setItem("resuai_ai_completed", "true"); navigate("/templates"); };
 
   return <main className="tool-page ats-ai-page">
-    <section className="tool-hero"><span>UPLOAD-ONLY AI CV REVIEW</span><h1>Upload your CV. Check the score. Improve it with AI.</h1><p>No manual CV form. Upload a PDF or Word file to receive a healthcare ATS score, detailed findings and AI suggestions based only on your verified information.</p></section>
+    <section className="tool-hero"><span>YOUR GUIDED AI CV CONSULTANT</span><h1>Improve your healthcare CV with guidance at every step.</h1><p>Upload your CV and your AI coach will explain what needs attention, suggest evidence-based improvements and walk you section by section to a verified final draft.</p></section>
 
     <section className="ai-import-workflow">
-      <div className="workflow-steps"><span className={stage !== "upload" ? "done" : "active"}><b>1</b> Upload PDF/Word</span><i/><span className={["improving","review"].includes(stage) ? "done" : stage === "ready" ? "active" : ""}><b>2</b> ATS score</span><i/><span className={stage === "review" ? "active" : ""}><b>3</b> AI suggestions</span></div>
+      <div className="workflow-steps"><span className={stage !== "upload" ? "done" : "active"}><b>1</b> Share your CV</span><i/><span className={["improving","review"].includes(stage) ? "done" : stage === "ready" ? "active" : ""}><b>2</b> Understand gaps</span><i/><span className={stage === "review" ? "active" : ""}><b>3</b> Review with coach</span></div>
       {!result ? <div className="ai-import-grid">
         <article className={`cv-dropzone ${fileName ? "has-file" : ""}`} onClick={() => fileRef.current?.click()} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); chooseFile(event.dataTransfer.files[0]); }}>
           <input ref={fileRef} type="file" hidden accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => chooseFile(event.target.files[0])}/>
           {fileName ? <><FiFileText/><strong>{fileName}</strong><p>{cvText.split(/\s+/).length} words extracted successfully</p><button type="button">Choose another CV</button></> : <><FiUploadCloud/><strong>Drop your existing CV here</strong><p>PDF or DOCX · Maximum 8 MB · No manual data-entry form</p><button type="button">Choose PDF or Word CV</button></>}
         </article>
-        <div className="ai-import-options">
+        <div className="ai-import-options"><div className="coach-welcome"><span><FiUser/></span><div><strong>Hi, I’m your ResuAI CV Coach.</strong><p>{fileName ? `I’ve read ${fileName}. Tell me the role and country below, and I’ll explain exactly what I would improve.` : "Start by sharing your current CV. I’ll guide you through the improvements instead of leaving you with a score alone."}</p></div></div>
           <label>Target country<select value={country} onChange={(event) => setCountry(event.target.value)}>{Object.keys(countryGuidance).map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Target healthcare role<select value={role} onChange={(event) => setRole(event.target.value)}>{Object.keys(healthcareRoles).map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Target job description <small>Optional but recommended</small><textarea value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} placeholder="Paste the vacancy so AI can align relevant, verified keywords..."/></label>
-          <button className="generate-improved-cv" type="button" disabled={!cvText || stage === "reading" || stage === "improving"} onClick={improveCV}><FiZap/>{stage === "reading" ? "Reading your CV..." : stage === "improving" ? "Creating AI suggestions..." : "Get ATS score & AI suggestions"}</button>
+          <button className="generate-improved-cv" type="button" disabled={!cvText || stage === "reading" || stage === "improving"} onClick={improveCV}><FiZap/>{stage === "reading" ? "I’m reading your CV..." : stage === "improving" ? "I’m preparing your guided review..." : "Start my guided CV review"}</button>
           <p className="privacy-inline"><FiInfo/>Do not upload patient records, passport numbers or other sensitive identifiers.</p>
         </div>
       </div> : <section className="ai-cv-review">
         <header><div><span>AI IMPROVEMENT PLAN</span><h2>{result.improved.targetHeadline || result.improved.detectedRole || "Healthcare CV"}</h2><p>Generated with {result.provider}. Review every suggestion before applying it.</p></div><div className="score-celebration"><small>Potential ATS lift</small><strong>{report.score} → {potentialScore}</strong><span>+{scoreGain} points</span></div></header>
-        <div className="review-columns"><div className="improved-content"><label>Professional summary<textarea value={result.improved.summary || ""} onChange={(event) => updateSummary(event.target.value)}/></label>{emptyArray(result.improved.experiences).map((experience, experienceIndex) => <article key={`${experience.company_name}-${experienceIndex}`}><h3>{experience.position}</h3><p>{experience.company_name} · {experience.start_date}–{experience.end_date}</p>{emptyArray(experience.achievements).map((bullet, bulletIndex) => <textarea aria-label={`Experience bullet ${bulletIndex + 1}`} key={bulletIndex} value={bullet.value || ""} onChange={(event) => updateBullet(experienceIndex, bulletIndex, event.target.value)}/>)}</article>)}</div>
-        <aside><h3>What AI improved</h3><ul>{emptyArray(result.improved.improvements).map((item) => <li key={item}><FiCheckCircle/>{item}</li>)}</ul><h3>Information still needed</h3><ul>{emptyArray(result.improved.missingInformation).map((item) => <li key={item}><FiAlertCircle/>{item}</li>)}</ul><label className="verification-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)}/><span>I have checked the names, dates, qualifications, licences and clinical claims.</span></label><button type="button" disabled={!confirmed} onClick={buildInTemplate}>Choose template & build CV <FiArrowRight/></button><button className="start-over" type="button" onClick={() => { setResult(null); setStage("ready"); setConfirmed(false); }}>Start again</button></aside></div>
+        <div className="guided-progress"><div><span>GUIDED REVIEW PROGRESS</span><strong>{reviewedItems} of {reviewItems} sections reviewed</strong></div><i><b style={{ width: `${Math.round((reviewedItems / reviewItems) * 100)}%` }}/></i></div>
+        <AICoach coach={result.improved.coach} topic={coachTopic} setTopic={setCoachTopic} missing={result.improved.missingInformation} score={report.score} potentialScore={potentialScore}/>
+        <div className="review-columns"><div className="improved-content"><ReviewCard title="Professional summary" reason={result.improved.coach?.summaryReason} decision={decisions.summary} onDecision={(value) => markDecision("summary", value)}><textarea aria-label="Professional summary" value={result.improved.summary || ""} onChange={(event) => updateSummary(event.target.value)}/></ReviewCard>{emptyArray(result.improved.experiences).map((experience, experienceIndex) => <ReviewCard key={`${experience.company_name}-${experienceIndex}`} title={experience.position || `Experience ${experienceIndex + 1}`} subtitle={`${experience.company_name || "Employer"} · ${experience.start_date || ""}–${experience.end_date || ""}`} reason={result.improved.coach?.experienceReason} decision={decisions[`experience-${experienceIndex}`]} onDecision={(value) => markDecision(`experience-${experienceIndex}`, value)}>{emptyArray(experience.achievements).map((bullet, bulletIndex) => <textarea aria-label={`Experience bullet ${bulletIndex + 1}`} key={bulletIndex} value={bullet.value || ""} onChange={(event) => updateBullet(experienceIndex, bulletIndex, event.target.value)}/>)}</ReviewCard>)}</div>
+        <aside><h3>Your coach’s checklist</h3><ul>{emptyArray(result.improved.improvements).map((item) => <li key={item}><FiCheckCircle/>{item}</li>)}</ul><h3>Please clarify or verify</h3><ul>{emptyArray(result.improved.missingInformation).map((item) => <li key={item}><FiAlertCircle/>{item}</li>)}</ul><label className="verification-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)}/><span>I have checked the names, dates, qualifications, licences and clinical claims.</span></label><button type="button" disabled={!confirmed || reviewedItems < reviewItems} onClick={buildInTemplate}>Choose template & build CV <FiArrowRight/></button>{reviewedItems < reviewItems ? <small className="review-reminder">Review each section above before continuing.</small> : null}<button className="start-over" type="button" onClick={() => { setResult(null); setStage("ready"); setConfirmed(false); setDecisions({}); }}>Start again</button></aside></div>
       </section>}
       {error ? <p className="ai-import-error"><FiAlertCircle/>{error}</p> : null}
     </section>
@@ -82,4 +89,18 @@ export default function ATSChecker() {
     {cvText && !result ? <section className="ats-grid compact-report"><article className="ats-report"><div className={`ats-score ${report.score >= 70 ? "good" : ""}`}><strong>{report.score}</strong><span>/100<br/>current CV</span></div><div className="score-breakdown">{Object.entries(report.scores).map(([key, value]) => <div key={key}><span>{scoreLabels[key]}</span><strong>{value === null ? "Add JD" : `${value}%`}</strong><i><b style={{ width: `${value || 0}%` }}/></i></div>)}</div><h2><FiSearch/> Current CV findings</h2><div className="check-results">{report.checks.slice(0, 4).map((check) => <details key={check.id}><summary>{check.points === check.max ? <FiCheckCircle/> : <FiAlertCircle/>}<span><strong>{check.label}</strong><small>{check.points}/{check.max} points</small></span></summary><div><p><b>Recommended:</b> {check.correction}</p></div></details>)}</div></article></section> : null}
     <p className="disclaimer">AI improves presentation, not facts. It must never be used to claim unverified clinical competence, registration or achievements.</p>
   </main>;
+}
+
+function AICoach({ coach = {}, topic, setTopic, missing, score, potentialScore }) {
+  const responses = {
+    welcome: coach.welcome || "I have prepared a guided review of your CV.",
+    score: coach.scoreExplanation || `Your current ATS score is ${score}. The suggested draft could reach ${potentialScore} after you verify the content.`,
+    verify: emptyArray(missing).length ? `Before finalising, please clarify: ${emptyArray(missing).slice(0, 3).join("; ")}.` : "I did not find an obvious missing item, but please still verify every date, qualification and clinical claim.",
+    next: coach.nextStep || "Review each section, choose Accept or Needs editing, and confirm the facts before selecting a template.",
+  };
+  return <section className="ai-coach-panel"><div className="coach-avatar"><FiMessageCircle/><span>ONLINE</span></div><div className="coach-conversation"><strong>ResuAI CV Coach</strong><p>{responses[topic]}</p><div><button className={topic === "score" ? "active" : ""} onClick={() => setTopic("score")}>Explain my score</button><button className={topic === "verify" ? "active" : ""} onClick={() => setTopic("verify")}>What should I verify?</button><button className={topic === "next" ? "active" : ""} onClick={() => setTopic("next")}>Guide my next step</button></div></div></section>;
+}
+
+function ReviewCard({ title, subtitle, reason, decision, onDecision, children }) {
+  return <article className={`guided-review-card ${decision || ""}`}><header><div><span>COACH SUGGESTION</span><h3>{title}</h3>{subtitle ? <p>{subtitle}</p> : null}</div>{decision ? <b><FiCheckCircle/>{decision === "accepted" ? "Accepted" : "Editing"}</b> : null}</header><div className="coach-reason"><FiMessageCircle/><p><strong>Why I’m suggesting this</strong>{reason || "This version is clearer for recruiters and ATS systems while staying grounded in your CV."}</p></div>{children}<footer><button className={decision === "accepted" ? "selected" : ""} onClick={() => onDecision("accepted")}><FiThumbsUp/> Accept suggestion</button><button className={decision === "editing" ? "selected" : ""} onClick={() => onDecision("editing")}><FiEdit3/> Needs editing</button></footer></article>;
 }
