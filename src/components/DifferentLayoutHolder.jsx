@@ -5,6 +5,7 @@ import { GridTwo } from "./layouts/input-layout/GridCards";
 import { H2, H3, Hspace } from "./CustomComponents";
 import { useNavigate } from "react-router-dom";
 import { LineDivider } from "./Divider/TransparentDividers";
+import { professionalTemplates } from "../static-data/professional-templates";
 
 const slideIn = keyframes`
   from {
@@ -111,15 +112,14 @@ const DifferentLayoutHolder = memo(({ isOpen, onHide }) => {
       <Hspace height="10px"/>
       <ScrollableWrapper>
         <GridTwo>
-          {Object.entries(all_layouts_image_map).flatMap(
-            ([category, layoutMap], outerIndex) =>
-              Object.entries(layoutMap).map(([layoutName, imageSRC], index) => (
-                <ImageWrapper key={`${outerIndex}-${index}`} onClick={() => handleLayoutClick(category, index + 1)}>
-                  <H3>{category} - {layoutName}</H3>
-                  <img src={imageSRC} loading="lazy" alt={`${category} ${layoutName}`} />
-                </ImageWrapper>
-              ))
-          )}
+          {professionalTemplates.map((template) => {
+            const images = Object.values(all_layouts_image_map[template.layoutType] || {});
+            const imageSRC = images[template.layoutId - 1];
+            return <ImageWrapper key={template.id} onClick={() => handleLayoutClick(template.layoutType, template.layoutId)}>
+              <H3>{template.name}</H3>
+              <img src={imageSRC} loading="lazy" alt={`${template.name} healthcare CV format`} />
+            </ImageWrapper>;
+          })}
         </GridTwo>
       </ScrollableWrapper>
 

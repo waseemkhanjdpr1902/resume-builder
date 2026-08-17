@@ -16,7 +16,6 @@ const useLoadSavedData = () => {
     if (improvedDraft) {
       try {
         setSavedData(JSON.parse(improvedDraft));
-        sessionStorage.removeItem("resuai_improved_cv");
         setIsSavedLoaded(true);
         return;
       } catch {
