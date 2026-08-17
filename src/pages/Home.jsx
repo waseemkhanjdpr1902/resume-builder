@@ -17,10 +17,10 @@ export default function Home() {
     <section className="hero-section">
       <div className="hero-copy">
         <span className="eyebrow">THE CAREER BUILDER FOR HEALTHCARE PROFESSIONALS</span>
-        <h1>Build your CV. Improve it with AI. Practise the interview.</h1>
-        <p className="hero-lead">Create an ATS-friendly healthcare CV, tailor it to jobs and practise realistic interviews with AI feedback based on your profession and experience.</p>
+        <h1>Your guided AI career partner for global healthcare roles.</h1>
+        <p className="hero-lead">Improve your CV with a step-by-step AI coach, check credential readiness for your destination and practise interviews with guidance based on your profession and real experience.</p>
         <div className="hero-actions"><Link className="primary-action" to="/ats-checker">Upload & improve my CV <FiArrowRight /></Link><Link className="secondary-action" to="/healthcare-interview-coach">Try AI Interview Coach</Link></div>
-        <div className="trust-row"><FiShield /> Healthcare-focused · ATS-friendly layouts · AI interview practice</div>
+        <div className="trust-row"><FiShield /> Evidence-led AI coaching · Healthcare ATS guidance · Country readiness</div>
         <div className="profession-strip">{professions.map(item => <span key={item}>{item}</span>)}</div>
       </div>
       <div className="clinical-preview">
