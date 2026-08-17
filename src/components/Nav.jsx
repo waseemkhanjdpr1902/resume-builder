@@ -7,9 +7,8 @@ const Nav = () => {
       <ul>
         <li><StyledNavLink to="/dashboard">Dashboard</StyledNavLink></li>
         <li><StyledNavLink to="/ats-checker">Upload CV</StyledNavLink></li>
-        <li><StyledNavLink to="/cover-letter">Cover Letter</StyledNavLink></li>
+        <li><StyledNavLink to="/healthcare-cv-examples">Free Resources</StyledNavLink></li>
         <li><StyledNavLink to="/ats-checker">ATS Check</StyledNavLink></li>
-        <li><StyledNavLink to="/ai-assistant">AI Assistant</StyledNavLink></li>
         <li><StyledNavLink to="/healthcare-interview-coach">Interview Coach</StyledNavLink></li>
         <li><StyledNavLink to="/pricing">Pricing</StyledNavLink></li>
       </ul>
