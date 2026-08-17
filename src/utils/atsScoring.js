@@ -3,6 +3,36 @@ const hasAny = (text, terms) => terms.some(term=>text.includes(normalise(term)))
 const result = (id,label,points,max,severity,found,missing,why,correction) => ({id,label,points,max,severity,found,missing,why,correction});
 const keywords = text => [...new Set(normalise(text).split(" ").filter(x=>x.length>3&&!/[0-9]/.test(x)))];
 
+const textValue = value => {
+  if (value == null) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (Array.isArray(value)) return value.map(textValue).filter(Boolean).join("\n");
+  if (typeof value === "object") return Object.values(value).map(textValue).filter(Boolean).join("\n");
+  return "";
+};
+
+export function cvDraftToScoringText(draft = {}) {
+  const personal = draft.personalDetails || {};
+  const sections = [
+    ["CONTACT", [personal.name, personal.profession, personal.email, personal.phone, personal.address, personal.urls]],
+    ["PROFESSIONAL SUMMARY", draft.summary],
+    ["PROFESSIONAL EXPERIENCE", draft.experiences],
+    ["EDUCATION AND QUALIFICATIONS", draft.educations],
+    ["CLINICAL SKILLS AND COMPETENCIES", draft.skills],
+    ["LICENCES AND CERTIFICATIONS", [draft.certificates, draft.licences, draft.registrations]],
+    ["TRAINING AND CONTINUING EDUCATION", draft.trainings],
+    ["ACHIEVEMENTS", draft.achievements],
+    ["LANGUAGES", draft.languages],
+    ["ADDITIONAL INFORMATION", draft.additionalSections],
+  ];
+  return sections.map(([heading, content]) => `${heading}\n${textValue(content)}`).join("\n\n");
+}
+
+export function compareAtsScores(currentScore, revisedScore) {
+  const delta = revisedScore - currentScore;
+  return { delta, direction: delta > 0 ? "improved" : delta < 0 ? "regressed" : "unchanged" };
+}
+
 export function scoreHealthcareCV({cvText="",jobDescription="",roleConfig,licenceAuthority=""}){
   const cv=normalise(cvText), jd=normalise(jobDescription); const checks=[];
   const sections=[["experience","employment","professional experience"],["education","qualification"],["skills","clinical skills","competencies"],["certification","licence","registration"]];
