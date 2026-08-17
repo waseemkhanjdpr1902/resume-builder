@@ -5,6 +5,7 @@ import GlobalStyle from './theme/global_styles'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppRoutes from './components/AppRoutes'
 import SEO from './components/SEO'
+import TestingAccessBanner from './components/TestingAccessBanner'
 import './css/navbar.css'
 import './css/premium-experience.css'
 
@@ -18,6 +19,7 @@ function App() {
       <ErrorBoundary>
       <SEO />
       <Header></Header>
+        <TestingAccessBanner />
         <AppRoutes/>
         <Footer />
       </ErrorBoundary>
