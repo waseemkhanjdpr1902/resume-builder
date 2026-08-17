@@ -12,7 +12,21 @@ const fetchWithTimeout = async (url, options, timeoutMs = 45_000) => {
 const providerError = async (provider, response) => {
   let code = "unknown";
   try { code = (await response.json())?.error?.code || "unknown"; } catch { /* provider returned no JSON */ }
-  return new Error(`${provider} request failed (${response.status}, ${code})`);
+  const error = new Error(`${provider} request failed (${response.status}, ${code})`);
+  error.status = response.status;
+  error.code = code;
+  return error;
+};
+
+export const parseProviderJson = (raw) => {
+  const value = String(raw || "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  try { return JSON.parse(value); }
+  catch {
+    const start = value.indexOf("{");
+    const end = value.lastIndexOf("}");
+    if (start < 0 || end <= start) throw new Error("AI provider returned no JSON object");
+    return JSON.parse(value.slice(start, end + 1));
+  }
 };
 
 const system = `You are a healthcare CV specialist. Transform the supplied CV into a complete, globally usable ATS-friendly healthcare CV. Use only facts explicitly present in the CV. Never invent employers, dates, qualifications, licences, registrations, clinical competence, patient volumes, achievements or metrics. Preserve contact details exactly. PRESERVATION IS MANDATORY: retain every employer, job title, date, qualification, licence, registration, certification, training, language, publication, research item, membership, award and other career fact found in the source. Improve wording and organisation, but never shorten the CV by deleting verified information. Put content that does not fit a named field into additionalSections. Where an important fact is absent, add it to missingInformation, never into the CV as a claim. Naturally align verified experience with the supplied job description. Return valid JSON only, with no markdown.`;
@@ -33,7 +47,25 @@ const enforceSourceDates = (draft, source) => {
 
 const providers = {
   openai: async (prompt) => { const key = process.env.OPENAI_API_KEY; if (!key) return null; const r = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4.1-mini", temperature: .15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) }); if (!r.ok) throw await providerError("OpenAI", r); const j = await r.json(); return j.choices?.[0]?.message?.content; },
-  groq: async (prompt) => { const key = process.env.GROQ_API_KEY; if (!key) return null; const r = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.GROQ_MODEL || "openai/gpt-oss-20b", temperature: .15, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) }); if (!r.ok) throw await providerError("Groq", r); const j = await r.json(); return j.choices?.[0]?.message?.content; },
+  groq: async (prompt) => {
+    const key = process.env.GROQ_API_KEY;
+    if (!key) return null;
+    const request = async (forceJson) => {
+      const body = { model: process.env.GROQ_MODEL || "openai/gpt-oss-20b", temperature: .1, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] };
+      if (forceJson) body.response_format = { type: "json_object" };
+      return fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    };
+    let r = await request(true);
+    if (!r.ok) {
+      const error = await providerError("Groq", r);
+      if (error.status !== 400) throw error;
+      console.warn(`Groq forced JSON failed (${error.code}); retrying with prompt-enforced JSON.`);
+      r = await request(false);
+    }
+    if (!r.ok) throw await providerError("Groq", r);
+    const j = await r.json();
+    return j.choices?.[0]?.message?.content;
+  },
 };
 
 export default async function handler(request, response) {
@@ -48,7 +80,7 @@ export default async function handler(request, response) {
     try {
       const raw = await providers[name](prompt);
       if (!raw) continue;
-      const improved = enforceSourceDates(JSON.parse(raw), String(cvText));
+      const improved = enforceSourceDates(parseProviderJson(raw), String(cvText));
       return response.status(200).json({ improved, provider: name, requiresVerification: true });
     } catch (error) {
       console.error(`CV improvement provider ${name} failed`, error instanceof Error ? error.message : "Unknown error");
