@@ -68,7 +68,8 @@ const LayoutProvider = ({ children }) => {
       openSourceWork: data?.openSourceWork || defaultFormFields.openSourceWork,
       industryExpertise: data?.industryExpertise || defaultFormFields.industryExpertise,
       certificates: data?.certificates || defaultFormFields.certificates,
-      my_time: data?.my_time || defaultFormFields.my_time
+      my_time: data?.my_time || defaultFormFields.my_time,
+      additionalSections: data?.additionalSections || []
     };
   };
 
