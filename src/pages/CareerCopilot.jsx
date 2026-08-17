@@ -6,9 +6,9 @@ import supabase from "../../supabaseClient";
 import "../css/career-copilot.css";
 
 const tools = [
-  { id: "match", icon: FiTarget, title: "AI Job Match", text: "See exactly how your CV compares with a vacancy." },
-  { id: "optimize", icon: FiZap, title: "Optimize My CV", text: "Find weak wording and improve it without inventing facts." },
-  { id: "cover", icon: FiFileText, title: "AI Cover Letter", text: "Create a job-specific healthcare cover letter." },
+  { id: "match", icon: <FiTarget/>, title: "AI Job Match", text: "See exactly how your CV compares with a vacancy." },
+  { id: "optimize", icon: <FiZap/>, title: "Optimize My CV", text: "Find weak wording and improve it without inventing facts." },
+  { id: "cover", icon: <FiFileText/>, title: "AI Cover Letter", text: "Create a job-specific healthcare cover letter." },
 ];
 
 const list = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
@@ -50,7 +50,7 @@ export default function CareerCopilot() {
         return;
       }
       const endpoint = tool === "match" ? "/api/job-match" : tool === "optimize" ? "/api/optimize-cv" : "/api/cover-letter-ai";
-      const body = tool === "match" ? { cvText, jobDescription, targetRole: role, targetCountry: country } : tool === "optimize" ? { cvText, targetRole: role, targetCountry: country } : { cvText, jobDescription, companyName: company, jobTitle, style };
+      const body = tool === "match" ? { cvText, jobDescription, targetRole: role, targetCountry: country } : tool === "optimize" ? { cvText, targetRole: role, targetCountry: country } : { cvText, jobDescription, companyName: company, jobTitle, targetRole: role, targetCountry: country, style };
       const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify(body) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "The AI service is temporarily unavailable.");
@@ -60,14 +60,14 @@ export default function CareerCopilot() {
   };
 
   const copyLetter = async () => {
-    const text = [result?.opening, result?.body, result?.closing].filter(Boolean).join("\n\n");
+    const text = [result?.subject && `Subject: ${result.subject}`, result?.opening, result?.body, result?.closing].filter(Boolean).join("\n\n");
     await navigator.clipboard.writeText(text);
   };
 
   return <main className="copilot-page">
     <section className="copilot-hero"><div><span>RESUAI CAREER COPILOT</span><h1>Your healthcare job search, powered by AI.</h1><p>Match vacancies, strengthen your CV and create targeted cover letters—all grounded in what you have actually done.</p></div><div className="copilot-badge"><FiCheckCircle/><strong>Fact-first AI</strong><small>No invented credentials or achievements.</small></div></section>
     <section className="copilot-shell">
-      <nav className="copilot-tabs">{tools.map(({ id, icon: Icon, title, text }) => <button key={id} className={tool === id ? "active" : ""} onClick={() => { setTool(id); setResult(null); setError(""); }}><Icon/><span><strong>{title}</strong><small>{text}</small></span></button>)}</nav>
+      <nav className="copilot-tabs">{tools.map(({ id, icon, title, text }) => <button key={id} className={tool === id ? "active" : ""} onClick={() => { setTool(id); setResult(null); setError(""); }}>{icon}<span><strong>{title}</strong><small>{text}</small></span></button>)}</nav>
       <div className="copilot-grid">
         <aside className="copilot-input">
           <div className="panel-title"><span>01</span><div><strong>Your evidence</strong><small>Start with your existing CV</small></div></div>
@@ -77,7 +77,7 @@ export default function CareerCopilot() {
           {tool !== "optimize" && <label>Job description<textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Paste the vacancy here..."/></label>}
           {tool === "cover" && <><label>Company name<input value={company} onChange={e => setCompany(e.target.value)} placeholder="Hospital or employer"/></label><label>Job title<input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Staff Nurse"/></label><label>Style<select value={style} onChange={e => setStyle(e.target.value)}><option>Professional</option><option>Concise</option><option>Executive</option></select></label></>}
           <button className="copilot-run" disabled={!cvReady || loading || (tool !== "optimize" && jobDescription.trim().length < 80)} onClick={run}><FiZap/>{loading ? "AI is analysing..." : tool === "match" ? "Check job match" : tool === "optimize" ? "Find CV improvements" : "Generate cover letter"}</button>
-          {error && <div className="copilot-auth-message"><FiLock/><div><strong>{error.includes("sign in") || error.includes("session") ? "Secure sign-in required" : "Something needs attention"}</strong><p>{error}</p>{(error.includes("sign in") || error.includes("session")) && <Link to={`/login?redirectTo=${encodeURIComponent("/career-copilot")}`}>Sign in securely <FiArrowRight/></Link>}</div></div>}
+          {error && <div className="copilot-auth-message"><FiLock/><div><strong>{error.includes("sign in") || error.includes("session") ? "Secure sign-in required" : error.includes("Upgrade") ? "Free result used" : "Something needs attention"}</strong><p>{error}</p>{(error.includes("sign in") || error.includes("session")) ? <Link to={`/login?redirectTo=${encodeURIComponent("/career-copilot")}`}>Sign in securely <FiArrowRight/></Link> : error.includes("Upgrade") ? <Link to="/pricing">See Pro plans <FiArrowRight/></Link> : null}</div></div>}
         </aside>
         <section className="copilot-result">
           {!result ? <div className="empty-copilot"><div><FiSearch/><h2>{tool === "match" ? "Know your chances before you apply" : tool === "optimize" ? "See the problems before changing your CV" : "Turn your CV into a targeted application"}</h2><p>{tool === "match" ? "Upload your CV and paste a vacancy to reveal match strength, missing keywords and ATS risks." : tool === "optimize" ? "We will flag generic language, weak bullets, redundancy and ATS issues before suggesting grounded improvements." : "Generate a personalized letter using your CV and the exact vacancy—without making up experience."}</p><div className="copilot-trust"><FiCheckCircle/> Your CV facts are sent securely for analysis only.</div></div></div> : tool === "match" ? <MatchResult result={result} score={score}/> : tool === "optimize" ? <OptimizeResult result={result}/> : <CoverResult result={result} copyLetter={copyLetter}/>} 
