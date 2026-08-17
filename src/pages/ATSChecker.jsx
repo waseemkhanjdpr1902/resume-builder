@@ -73,7 +73,8 @@ export default function ATSChecker() {
           <label>Target country<select value={country} onChange={(event) => setCountry(event.target.value)}>{Object.keys(countryGuidance).map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Target healthcare role<select value={role} onChange={(event) => setRole(event.target.value)}>{Object.keys(healthcareRoles).map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Target job description <small>Optional but recommended</small><textarea value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} placeholder="Paste the vacancy so AI can align relevant, verified keywords..."/></label>
-          <button className="generate-improved-cv" type="button" disabled={!cvText || stage === "reading" || stage === "improving"} onClick={improveCV}><FiZap/>{stage === "reading" ? "I’m reading your CV..." : stage === "improving" ? "I’m preparing your guided review..." : "Start my guided CV review"}</button>
+          <button className="generate-improved-cv" type="button" disabled={!cvText || stage === "reading" || stage === "improving"} title={!cvText ? "Upload a readable PDF or Word CV first." : stage === "reading" ? "Your CV is still being read." : "Start guided review"} onClick={improveCV}><FiZap/>{stage === "reading" ? "I’m reading your CV..." : stage === "improving" ? "I’m preparing your guided review..." : !cvText ? "Upload CV to unlock guided review" : "Start my guided CV review"}</button>
+          {!cvText ? <p className="control-reason"><FiFileText/>Upload a readable PDF or Word CV to enable the guided review.</p> : null}
           <p className="privacy-inline"><FiInfo/>Do not upload patient records, passport numbers or other sensitive identifiers.</p>
         </div>
       </div> : <section className="ai-cv-review">
