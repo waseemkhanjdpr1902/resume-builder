@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { secureJsonPost, requireUser } from "./_security.js";
 import { runAI, clean } from "./_ai.js";
+import { isTestingAccessEnabled } from "./_testing-access.js";
 
 const db = () => createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, Number(n) || 0));
@@ -52,6 +53,7 @@ const buildContext = (body) => {
 };
 
 const getSubscription = async (userId) => {
+  if (isTestingAccessEnabled()) return { active: true, plan: "testing-access" };
   try {
     const { data } = await db().from("subscription_records").select("plan_id,status,expires_at").eq("owner_id", userId).eq("status", "paid").order("created_at", { ascending: false }).limit(1);
     const row = data?.[0];
