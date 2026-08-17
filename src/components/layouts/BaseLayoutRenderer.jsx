@@ -100,6 +100,11 @@ const BaseLayoutRenderer = memo(
       sectionRefs.current.map(ref => ref?.offsetHeight).join(","),
     ]);
 
+    useLayoutEffect(() => {
+      setPages([]);
+      setMeasured(false);
+    }, [layoutId, layout_type, setMeasured]);
+
     useEffect(() => {
       console.log("called measured in useEffect")
       if (shouldMeasureHeight) {
