@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle, FiChevronRight, FiFileText, FiMic, FiPlay, FiRefreshCw, FiTarget, FiTrendingUp, FiXCircle, FiZap } from "react-icons/fi";
 import supabase from "../../supabaseClient";
 import { readCVFile } from "../utils/cvFileReader";
+import DownloadPaywall from "../components/DownloadPaywall";
 import "../css/interview-coach.css";
 
 const MODES = [
@@ -41,6 +42,7 @@ export default function InterviewCoach() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   const selectedMode = useMemo(() => MODES.find(([name]) => name === mode), [mode]);
   const cvReady = cvText.trim().length >= 120;
@@ -55,6 +57,11 @@ export default function InterviewCoach() {
       body: JSON.stringify(payload),
     });
     const result = await response.json().catch(() => ({}));
+    if (response.status === 402) {
+      const paywallError = new Error(result.error || "Your free interview has been used.");
+      paywallError.upgradeRequired = true;
+      throw paywallError;
+    }
     if (!response.ok) throw new Error(result.error || "Interview service is temporarily unavailable.");
     return result;
   }
@@ -90,6 +97,7 @@ export default function InterviewCoach() {
       setReport(null);
       setScreen("interview");
     } catch (err) {
+      if (err?.upgradeRequired) setPaywallOpen(true);
       setError(err?.message || "Could not start the AI interview.");
     } finally {
       setLoading(false);
@@ -156,6 +164,7 @@ export default function InterviewCoach() {
       {screen === "interview" && <InterviewScreen {...{ question, questionCount, answered, answer, setAnswer, evaluation, submitAnswer, completeInterview, loading }} />}
       {screen === "report" && <Report report={report} onAgain={() => setScreen("setup")} onHistory={loadHistory} />}
       {screen === "history" && <History items={history} onAgain={() => setScreen("setup")} />}
+      {paywallOpen ? <DownloadPaywall feature="interview session" title="Continue practising with AI Interview Coach" message="Your complete free interview session has been used. Upgrade for unlimited role-specific practice and feedback during your access period." onClose={() => setPaywallOpen(false)} onPaid={() => { setPaywallOpen(false); setError(""); }} /> : null}
     </main>
   );
 }
