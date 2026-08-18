@@ -29,6 +29,7 @@ const unavailableClient = {
     getSession: async () => ({ data: { session: null }, error: null }),
     signOut: async () => ({ error: null }),
     signInWithOAuth: async () => ({ data: null, error: configurationError }),
+    signInWithIdToken: async () => ({ data: null, error: configurationError }),
     signInWithOtp: async () => ({ data: null, error: configurationError }),
     signInWithPassword: async () => ({ data: null, error: configurationError }),
     signUp: async () => ({ data: null, error: configurationError }),
