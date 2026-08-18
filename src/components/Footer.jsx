@@ -85,6 +85,7 @@ const Footer = () => {
           {seoPageLinks.map(([label, path]) => <StyledNavLink key={path} to={path}>{label}</StyledNavLink>)}
           <StyledNavLink to="/healthcare-cv-examples">CV Examples</StyledNavLink>
           <StyledNavLink to="/gcc-eligibility-checker">GCC Checklist</StyledNavLink>
+          <StyledNavLink to="/licensing-exam-prep">Licensing Exam Prep</StyledNavLink>
           <StyledNavLink to="/healthcare-interview-questions">Interview Questions</StyledNavLink>
           <StyledNavLink to="/healthcare-salary-explorer">Salary Explorer</StyledNavLink>
           <StyledNavLink to="/application-tracker">Application Tracker</StyledNavLink>
