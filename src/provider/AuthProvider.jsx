@@ -55,8 +55,11 @@ const AuthProvider = ({ children }) => {
 
 
     const logout = async () => {
-        await supabase.auth.signOut()
-        alert("signout success")
+        const { error } = await supabase.auth.signOut()
+        if (error) return { status: "error", message: error.message }
+        setUser(null)
+        navigate("/", { replace: true })
+        return { status: "success" }
     }
 
     const loginWithGoogle = async () => {
