@@ -96,6 +96,21 @@ const AuthProvider = ({ children }) => {
         }
 
     }
+    const loginWithGoogleToken = async (credential) => {
+        try {
+            if (!credential) return { status: "error", message: "Google did not return a secure sign-in token." };
+            const { data, error } = await supabase.auth.signInWithIdToken({ provider: "google", token: credential });
+            if (error) throw error;
+            const authenticatedUser = profileFromSession(data?.session);
+            if (!authenticatedUser) throw new Error("Google sign-in completed without an account session.");
+            setUser(authenticatedUser);
+            navigate(getRedirectPath(location.search), { replace: true });
+            return { status: "success" };
+        } catch (error) {
+            console.error("Google ID-token login failed:", error?.message);
+            return { status: "error", message: error?.message || "Google sign-in could not be completed." };
+        }
+    };
     const loginWithLink = async (email) => {
         try {
             const redirectPath = getRedirectPath(location.search);
@@ -183,6 +198,7 @@ const AuthProvider = ({ children }) => {
             logout,
             loginWithEmailAndPassword,
             loginWithGoogle,
+            loginWithGoogleToken,
             loginWithLink,
             loading,
             isAuthenciated,
@@ -194,6 +210,7 @@ const AuthProvider = ({ children }) => {
         logout,
         loginWithEmailAndPassword,
         loginWithGoogle,
+        loginWithGoogleToken,
         loginWithLink,
         loading,
         isAuthenciated,
