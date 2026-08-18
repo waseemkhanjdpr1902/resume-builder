@@ -15,7 +15,7 @@ const Trigger = styled.button`
   >img,.initial{display:grid!important;place-items:center!important;flex:0 0 32px!important;width:32px!important;height:32px!important;max-width:32px!important;max-height:32px!important;border-radius:50%!important;object-fit:cover!important;background:#79dfd2;color:#063d3b;font-weight:900;font-size:.9rem!important}
   .copy{display:block;text-align:left;max-width:92px}.copy strong,.copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.copy strong{font-size:.75rem}.copy small{font-size:.62rem;opacity:.75}
   >svg{flex:0 0 auto;transition:.2s}.rotate{transform:rotate(180deg)}
-  @media(max-width:620px){.copy{display:none}}
+  @media(max-width:1400px){.copy{display:none}}
 `;
 const Menu = styled.div`
   position:absolute;top:calc(100% + 10px);right:0;z-index:400;width:280px;padding:10px;border:1px solid #dbe8e5;border-radius:14px;background:#fff;color:#183b48;box-shadow:0 22px 60px rgba(6,35,52,.22);
