@@ -1,15 +1,47 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { FiArrowRight, FiCheck, FiEye, FiEyeOff, FiLock, FiMail, FiShield, FiStar } from "react-icons/fi";
-import googleIcon from "../assets/google_icon.svg";
 import { useAuth } from "../provider/AuthProvider";
 import "../css/login.css";
 
 const MODES = { PASSWORD: "password", MAGIC_LINK: "magic-link" };
 const FiSparkles = FiStar;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "85473690452-o266vp2bqcs6lsurv9ajsk2na640vo50.apps.googleusercontent.com";
+
+function GoogleIdentityButton({ onCredential, disabled }) {
+  const host = useRef(null);
+  const callbackRef = useRef(onCredential);
+  callbackRef.current = onCredential;
+
+  useEffect(() => {
+    let cancelled = false;
+    const render = () => {
+      if (cancelled || !host.current || !window.google?.accounts?.id) return;
+      window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: response => callbackRef.current(response?.credential), auto_select: false });
+      host.current.replaceChildren();
+      window.google.accounts.id.renderButton(host.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", logo_alignment: "left", width: Math.min(400, Math.max(260, host.current.clientWidth || 360)) });
+    };
+    if (window.google?.accounts?.id) render();
+    else {
+      let script = document.querySelector('script[data-resuai-google-identity]');
+      if (!script) {
+        script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.dataset.resuaiGoogleIdentity = "true";
+        document.head.appendChild(script);
+      }
+      script.addEventListener("load", render, { once: true });
+    }
+    return () => { cancelled = true; };
+  }, []);
+
+  return <div className={`google-identity-wrap${disabled ? " disabled" : ""}`} ref={host} aria-label="Continue with Google" />;
+}
 
 export default function Login() {
   const [mode, setMode] = useState(MODES.PASSWORD);
@@ -17,7 +49,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const { loginWithEmailAndPassword, loginWithGoogle, loginWithLink } = useAuth();
+  const { loginWithEmailAndPassword, loginWithGoogleToken, loginWithLink } = useAuth();
   const schema = useMemo(() => z.object({ email: z.string().min(1, "Enter your email address").email("Enter a valid email address"), ...(mode === MODES.PASSWORD ? { password: z.string().min(8, "Password must contain at least 8 characters").max(72, "Password is too long") } : {}) }), [mode]);
   const { register, formState: { errors }, handleSubmit, reset } = useForm({ resolver: zodResolver(schema) });
   const chooseMode = nextMode => { setMode(nextMode); setFeedback(null); reset(); };
@@ -28,7 +60,7 @@ export default function Login() {
     catch { setFeedback({ status: "error", message: "We could not complete that request. Please try again." }); }
     finally { setSubmitting(false); }
   };
-  const connectGoogle = async () => { setSubmitting(true); setFeedback(null); try { const response = await loginWithGoogle(); if (response?.status === "error") setFeedback(response); } finally { setSubmitting(false); } };
+  const connectGoogle = async credential => { setSubmitting(true); setFeedback(null); try { const response = await loginWithGoogleToken(credential); if (response?.status === "error") setFeedback(response); } finally { setSubmitting(false); } };
 
   return <main className="premium-login-page">
     <section className="login-value-panel">
@@ -38,7 +70,7 @@ export default function Login() {
     </section>
     <section className="login-form-panel"><div className="premium-login-card">
       <header><span>{creating ? "CREATE YOUR WORKSPACE" : "WELCOME BACK"}</span><h2>{creating ? "Start your healthcare career workspace" : "Sign in to continue"}</h2><p>{creating ? "Create one secure account to save your work and progress." : "Access your CVs, practice results and career tools."}</p></header>
-      <button className="google-auth-button" type="button" onClick={connectGoogle} disabled={submitting}><img src={googleIcon} alt=""/><span>{submitting ? "Connecting securely…" : "Continue with Google"}</span></button>
+      <GoogleIdentityButton onCredential={connectGoogle} disabled={submitting} />
       <div className="login-divider"><span>or continue with email</span></div>
       <div className="login-mode-tabs" role="tablist" aria-label="Sign-in method"><button type="button" role="tab" aria-selected={mode === MODES.PASSWORD} className={mode === MODES.PASSWORD ? "active" : ""} onClick={() => chooseMode(MODES.PASSWORD)}>Password</button><button type="button" role="tab" aria-selected={mode === MODES.MAGIC_LINK} className={mode === MODES.MAGIC_LINK ? "active" : ""} onClick={() => chooseMode(MODES.MAGIC_LINK)}>Email link</button></div>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
