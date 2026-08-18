@@ -46,7 +46,6 @@ export async function startPayment(planId, onSuccess) {
 
 export async function hasDownloadAccess() {
   const token = localStorage.getItem(ACCESS_KEY);
-  if (!token) return false;
   try {
     const result = await requestJson("/api/check-access", { token });
     if (!result.active) localStorage.removeItem(ACCESS_KEY);
