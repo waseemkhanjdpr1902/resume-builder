@@ -3,12 +3,13 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { FiArrowRight, FiCheck, FiEye, FiEyeOff, FiLock, FiMail, FiShield, FiSparkles } from "react-icons/fi";
+import { FiArrowRight, FiCheck, FiEye, FiEyeOff, FiLock, FiMail, FiShield, FiStar } from "react-icons/fi";
 import googleIcon from "../assets/google_icon.svg";
 import { useAuth } from "../provider/AuthProvider";
 import "../css/login.css";
 
 const MODES = { PASSWORD: "password", MAGIC_LINK: "magic-link" };
+const FiSparkles = FiStar;
 
 export default function Login() {
   const [mode, setMode] = useState(MODES.PASSWORD);
