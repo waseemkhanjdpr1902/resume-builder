@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-const siteUrl = "https://resume-builder-murex-five.vercel.app";
+const siteUrl = "https://resuaibuilder.com";
 const defaultDescription = "Create an ATS-friendly healthcare CV with AI-assisted improvement, nursing and medical templates, job matching and secure PDF export.";
 const pages = {
   "/": { title: "Healthcare CV Builder & ATS Resume Optimiser | ResuAIBuilder", description: defaultDescription },
   "/templates": { title: "Healthcare CV Templates for Nurses, Doctors & Allied Health", description: "Choose professional ATS-friendly healthcare CV templates designed for nurses, doctors, pharmacists and allied health professionals." },
   "/ats-checker": { title: "Healthcare ATS CV Checker & AI Resume Optimiser", description: "Upload your healthcare CV, check ATS readiness and create an improved, editable version using verified professional information." },
+  "/licensing-exam-prep": { title: "DHA, DOH & GCC Healthcare Exam Practice | ResuAIBuilder", description: "Practise healthcare licensing-style questions for DHA, DOH, MOHAP, SCFHS, DHP and other GCC pathways by profession." },
   "/healthcare-guide": { title: "Healthcare CV Guide by Role and Country | ResuAIBuilder", description: "Practical CV guidance for healthcare professionals applying in the UAE, UK, Saudi Arabia, Qatar, India and other global markets." },
   "/cover-letter": { title: "Healthcare Cover Letter Builder | ResuAIBuilder", description: "Create a tailored healthcare cover letter for nursing, medical, pharmacy and allied health roles." },
   "/pricing": { title: "Healthcare CV Builder Pricing | ResuAIBuilder", description: "Compare affordable ResuAIBuilder plans for healthcare CV creation, ATS analysis and professional document tools." },
