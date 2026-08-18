@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-const siteUrl = "https://resuaibuilder.com";
+const siteUrl = "https://www.resuaibuilder.com";
 const defaultDescription = "Create an ATS-friendly healthcare CV with AI-assisted improvement, nursing and medical templates, job matching and secure PDF export.";
 const pages = {
   "/": { title: "Healthcare CV Builder & ATS Resume Optimiser | ResuAIBuilder", description: defaultDescription },
