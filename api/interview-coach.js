@@ -55,7 +55,7 @@ const buildContext = (body) => {
 const getSubscription = async (userId) => {
   if (isTestingAccessEnabled()) return { active: true, plan: "testing-access" };
   try {
-    const { data } = await db().from("subscription_records").select("plan_id,status,expires_at").eq("owner_id", userId).eq("status", "paid").order("created_at", { ascending: false }).limit(1);
+    const { data } = await db().from("subscription_records").select("plan_id,status,expires_at").eq("owner_id", userId).in("status", ["active", "paid"]).order("created_at", { ascending: false }).limit(1);
     const row = data?.[0];
     const active = !!row && (!row.expires_at || new Date(row.expires_at) > new Date());
     return { active, plan: active ? row.plan_id : "free" };
