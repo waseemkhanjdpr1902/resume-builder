@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FiAlertTriangle, FiArrowRight, FiCheck, FiCheckCircle, FiFileText, FiGlobe, FiLock, FiShield, FiTarget } from "react-icons/fi";
 import { calculateReadiness, credentialOptions, destinations, professions } from "../data/credentialReadiness";
 import supabase from "../../supabaseClient";
+import DownloadPaywall from "../components/DownloadPaywall";
 import "../css/credential-readiness.css";
 
 export default function CredentialReadiness() {
@@ -13,6 +14,7 @@ export default function CredentialReadiness() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   const country = destinations[destination];
   const selectedCount = credentials.length;
@@ -26,6 +28,7 @@ export default function CredentialReadiness() {
       if (!session?.access_token) throw new Error("Please sign in to generate your free readiness report.");
       const response = await fetch("/api/credential-readiness", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ profession, destination, experienceYears, credentials }) });
       const data = await response.json();
+      if (response.status === 402) { setPaywallOpen(true); return; }
       if (!response.ok) throw new Error(data.error || "The readiness service is temporarily unavailable.");
       setReport(data);
       requestAnimationFrame(() => document.getElementById("readiness-report")?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -57,6 +60,7 @@ export default function CredentialReadiness() {
       <header><div><span>YOUR READINESS REPORT</span><h2>{profession} → {destination}</h2><p>{report.status}. Prioritise verified evidence before submitting applications.</p></div><div className={`report-score score-${report.score >= 80 ? "high" : report.score >= 55 ? "medium" : "low"}`}><strong>{report.score}</strong><small>/100</small></div></header>
       <ReportDetails report={report}/>
     </section> : null}
+    {paywallOpen ? <DownloadPaywall feature="readiness report" title="Unlock unlimited country-readiness reports" message="Your free credential and country-readiness report has been used. Upgrade to compare more destinations and professional pathways." onClose={() => setPaywallOpen(false)} onPaid={() => setPaywallOpen(false)} /> : null}
   </main>;
 }
 
