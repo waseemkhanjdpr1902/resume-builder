@@ -3,7 +3,10 @@ import supabase from "../../supabaseClient";
 import { useLocation, useNavigate } from "react-router-dom";
 const AuthContext = createContext()
 const OAUTH_REDIRECT_KEY = "resuai_oauth_redirect";
-const SITE_ORIGIN = String(import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/$/, "");
+const LIVE_SITE_ORIGIN = "https://www.resuaibuilder.com";
+const SITE_ORIGIN = window.location.hostname === "resuaibuilder.com" || window.location.hostname === "www.resuaibuilder.com"
+    ? LIVE_SITE_ORIGIN
+    : String(import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/$/, "");
 
 const profileFromSession = (session) => {
     const authUser = session?.user;
