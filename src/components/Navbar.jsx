@@ -5,7 +5,6 @@ import UserCard from "./UserCard";
 import ThemeToggler from "./ThemeToggler";
 import { StyledNavLink } from "./CustomComponents";
 import { useTheme } from "styled-components";
-import "../css/account-menu.css";
 ;
 
 
