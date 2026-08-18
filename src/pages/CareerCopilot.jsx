@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FiArrowRight, FiCheckCircle, FiFileText, FiSearch, FiTarget, FiZap, FiAlertTriangle, FiCopy, FiLock } from "react-icons/fi";
 import { readCVFile } from "../utils/cvFileReader";
 import supabase from "../../supabaseClient";
+import DownloadPaywall from "../components/DownloadPaywall";
 import "../css/career-copilot.css";
 
 const tools = [
@@ -26,6 +27,7 @@ export default function CareerCopilot() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   const cvReady = cvText.trim().length >= 120;
   const score = useMemo(() => Number(result?.overallScore || 0), [result]);
@@ -54,6 +56,7 @@ export default function CareerCopilot() {
       const body = tool === "match" ? { cvText, jobDescription, targetRole: role, targetCountry: country } : tool === "optimize" ? { cvText, targetRole: role, targetCountry: country } : { cvText, jobDescription, companyName: company, jobTitle, targetRole: role, targetCountry: country, style };
       const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify(body) });
       const data = await response.json();
+      if (response.status === 402) { setPaywallOpen(true); return; }
       if (!response.ok) throw new Error(data.error || "The AI service is temporarily unavailable.");
       setResult(data);
     } catch (e) { setError(e.message); }
@@ -87,6 +90,7 @@ export default function CareerCopilot() {
       </div>
     </section>
     <p className="copilot-disclaimer">AI suggestions are career-writing assistance, not licensing or employment guarantees. Always verify facts before applying.</p>
+    {paywallOpen ? <DownloadPaywall feature="AI result" title="Continue with unlimited Career Copilot" message="Your free result for this Career Copilot tool has been used. Upgrade to keep matching jobs, optimizing CVs and creating tailored cover letters." onClose={() => setPaywallOpen(false)} onPaid={() => setPaywallOpen(false)} /> : null}
   </main>;
 }
 
