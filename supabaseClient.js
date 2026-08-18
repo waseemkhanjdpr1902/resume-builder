@@ -45,7 +45,14 @@ const unavailableClient = {
 };
 
 const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: "implicit",
+      },
+    })
   : unavailableClient;
 
 export default supabase;
