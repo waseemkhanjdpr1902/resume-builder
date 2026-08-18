@@ -3,6 +3,18 @@ import supabase from "../../supabaseClient";
 import { useLocation, useNavigate } from "react-router-dom";
 const AuthContext = createContext()
 const OAUTH_REDIRECT_KEY = "resuai_oauth_redirect";
+const SITE_ORIGIN = String(import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/$/, "");
+
+const profileFromSession = (session) => {
+    const authUser = session?.user;
+    if (!authUser) return null;
+    return {
+        id: authUser.id,
+        email: authUser.email,
+        name: authUser.user_metadata?.name || authUser.user_metadata?.full_name,
+        picture: authUser.user_metadata?.picture || authUser.user_metadata?.avatar_url,
+    };
+};
 
 const getRedirectPath = (search) => {
     const requestedPath = new URLSearchParams(search).get("redirectTo");
@@ -32,13 +44,7 @@ const AuthProvider = ({ children }) => {
                 setUser(null);
                 isAuthenciated = false;
             } else {
-                const authUser = data.session.user;
-                const user = {
-                    id: authUser.id,
-                    email: authUser.email,
-                    name: authUser?.user_metadata?.name,
-                    picture: authUser?.user_metadata?.picture,
-                };
+                const user = profileFromSession(data.session);
                 isAuthenciated = true
 
                 setUser(user);
@@ -69,7 +75,7 @@ const AuthProvider = ({ children }) => {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/login`,
+                    redirectTo: `${SITE_ORIGIN}/login`,
                     queryParams: {
                         prompt: "select_account",
                     },
@@ -92,7 +98,7 @@ const AuthProvider = ({ children }) => {
             const redirectPath = getRedirectPath(location.search);
             const { data, error } = await supabase.auth.signInWithOtp({
                 email,
-                options: { emailRedirectTo: `${window.location.origin}${redirectPath}` },
+                options: { emailRedirectTo: `${SITE_ORIGIN}${redirectPath}` },
             });
             if (error) {
                 console.error("OTP Login failed:", error);
@@ -117,7 +123,11 @@ const AuthProvider = ({ children }) => {
                 if (error) throw error;
                 authResult = data;
             } else {
-                const { data, error } = await supabase.auth.signUp({ email, password });
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { emailRedirectTo: `${SITE_ORIGIN}/login?confirmed=1` },
+                });
                 if (error) throw error;
                 authResult = data;
             }
@@ -142,8 +152,12 @@ const AuthProvider = ({ children }) => {
     useEffect(() => {
         getUser()
         const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                getUser();
+            // Supabase supplies the authoritative session here. Calling getSession()
+            // again from inside this callback can stall OAuth/password completion.
+            const authenticatedUser = profileFromSession(session);
+            if (authenticatedUser) {
+                setUser(authenticatedUser);
+                setLoading(false);
                 if (event === "SIGNED_IN" && location.pathname === "/login") {
                     const redirectPath = sessionStorage.getItem(OAUTH_REDIRECT_KEY) || getRedirectPath(location.search);
                     sessionStorage.removeItem(OAUTH_REDIRECT_KEY);
