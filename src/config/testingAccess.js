@@ -1,4 +1,3 @@
-// Keep this aligned with RESUAI_TESTING_ACCESS on the server. The default is
-// intentionally open for the current private validation round.
+// Testing access must be explicitly enabled. Production is freemium by default.
 export const TESTING_ACCESS_ENABLED =
-  String(import.meta.env.VITE_RESUAI_TESTING_ACCESS ?? "true").toLowerCase() !== "false";
+  String(import.meta.env.VITE_RESUAI_TESTING_ACCESS ?? "false").toLowerCase() === "true";
