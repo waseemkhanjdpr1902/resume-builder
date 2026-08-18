@@ -7,4 +7,4 @@ Disallow: /redirecting
 Disallow: /get-started
 Disallow: /ai-assistant
 
-Sitemap: https://resume-builder-murex-five.vercel.app/sitemap.xml
+Sitemap: https://www.resuaibuilder.com/sitemap.xml
