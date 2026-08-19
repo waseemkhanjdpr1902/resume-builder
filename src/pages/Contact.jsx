@@ -110,8 +110,8 @@ const ContactPage = () => {
 
           <InfoSection>
             <CompanyName>Wyonora Global</CompanyName>
-            <InfoItem><BiPhone size={20} /><span>+91 63758 62123</span></InfoItem>
-            <InfoItem><BsMailbox size={20} /><span>Email address will be updated soon</span></InfoItem>
+            <InfoItem><BiPhone size={20} /><a href="https://wa.me/916375862123" target="_blank" rel="noopener noreferrer">WhatsApp: +91 63758 62123</a></InfoItem>
+            <InfoItem><BsMailbox size={20} /><a href="mailto:contact@resuaibuilder.com">contact@resuaibuilder.com</a></InfoItem>
             <InfoItem><FaMapMarker size={20} /><span>India</span></InfoItem>
           </InfoSection>
         </ContactGrid>
