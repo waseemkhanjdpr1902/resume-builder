@@ -53,7 +53,7 @@ const normalizeJob = (job) => ({
   salaryPeriod: safeText(job.job_salary_period, 30),
 });
 
-export default async function handler(request, response) {
+export async function healthcareJobsHandler(request, response) {
   response.setHeader("X-Content-Type-Options", "nosniff");
   response.setHeader("Cache-Control", "public, s-maxage=21600, stale-while-revalidate=86400");
   if (request.method !== "GET") {
