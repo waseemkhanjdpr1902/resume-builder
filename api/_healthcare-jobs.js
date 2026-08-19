@@ -45,7 +45,7 @@ const normalizeJob = (job) => ({
   location: safeText(job.job_location, 160),
   employmentType: safeText(job.job_employment_type, 60),
   description: safeText(job.job_description),
-  applyUrl: safeUrl(job.job_apply_link),
+  applyUrl: safeUrl(job.job_apply_link || job.apply_options?.[0]?.apply_link || job.job_google_link),
   publisher: safeText(job.job_publisher, 100),
   postedAt: safeText(job.job_posted_at_datetime_utc, 60),
   minSalary: Number.isFinite(job.job_min_salary) ? job.job_min_salary : null,
@@ -96,7 +96,8 @@ export async function healthcareJobsHandler(request, response) {
 
     const result = await apiResponse.json();
     const seen = new Set();
-    const jobs = (Array.isArray(result.data) ? result.data : [])
+    const rawJobs = Array.isArray(result.data) ? result.data : Array.isArray(result.data?.jobs) ? result.data.jobs : [];
+    const jobs = rawJobs
       .map(normalizeJob)
       .filter((job) => job.title && job.applyUrl)
       .filter((job) => {
