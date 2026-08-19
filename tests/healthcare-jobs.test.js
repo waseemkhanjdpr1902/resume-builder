@@ -28,10 +28,10 @@ test("healthcare jobs keeps the provider key server-side and normalizes safe res
   let captured;
   global.fetch = async (url, options) => {
     captured = { url: String(url), options };
-    return { ok: true, json: async () => ({ data: [
-      { job_id: "1", job_title: "Registered Nurse", employer_name: "UAE Hospital", job_location: "Dubai", job_apply_link: "https://example.com/apply", job_description: "Provide safe patient care." },
+    return { ok: true, json: async () => ({ data: { jobs: [
+      { job_id: "1", job_title: "Registered Nurse", employer_name: "UAE Hospital", job_location: "Dubai", apply_options: [{ apply_link: "https://example.com/apply" }], job_description: "Provide safe patient care." },
       { job_id: "2", job_title: "Unsafe listing", job_apply_link: "javascript:alert(1)" },
-    ] }) };
+    ] } }) };
   };
   try {
     const result = await invoke({ role: "nurse", location: "dubai" });
