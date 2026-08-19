@@ -7,6 +7,7 @@ const pages = {
   "/": { title: "Healthcare CV Builder & ATS Resume Optimiser | ResuAIBuilder", description: defaultDescription },
   "/templates": { title: "Healthcare CV Templates for Nurses, Doctors & Allied Health", description: "Choose professional ATS-friendly healthcare CV templates designed for nurses, doctors, pharmacists and allied health professionals." },
   "/ats-checker": { title: "Healthcare ATS CV Checker & AI Resume Optimiser", description: "Upload your healthcare CV, check ATS readiness and create an improved, editable version using verified professional information." },
+  "/uae-healthcare-jobs": { title: "UAE Healthcare Jobs for Nurses, Doctors & Allied Health", description: "Search current UAE healthcare opportunities by profession and emirate, then match your healthcare CV before applying on the original job website." },
   "/licensing-exam-prep": { title: "DHA, DOH & GCC Healthcare Exam Practice | ResuAIBuilder", description: "Practise healthcare licensing-style questions for DHA, DOH, MOHAP, SCFHS, DHP and other GCC pathways by profession." },
   "/healthcare-guide": { title: "Healthcare CV Guide by Role and Country | ResuAIBuilder", description: "Practical CV guidance for healthcare professionals applying in the UAE, UK, Saudi Arabia, Qatar, India and other global markets." },
   "/cover-letter": { title: "Healthcare Cover Letter Builder | ResuAIBuilder", description: "Create a tailored healthcare cover letter for nursing, medical, pharmacy and allied health roles." },
