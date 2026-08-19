@@ -21,7 +21,7 @@ const profileFromSession = (session) => {
 
 const getRedirectPath = (search) => {
     const requestedPath = new URLSearchParams(search).get("redirectTo");
-    return requestedPath?.startsWith("/") ? requestedPath : "/dashboard";
+    return requestedPath?.startsWith("/") ? requestedPath : "/uae-healthcare-jobs";
 }
 
 const AuthProvider = ({ children }) => {
