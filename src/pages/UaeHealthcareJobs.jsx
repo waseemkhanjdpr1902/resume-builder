@@ -31,7 +31,7 @@ export default function UaeHealthcareJobs() {
   useEffect(() => {
     const controller = new AbortController();
     setState((current) => ({ ...current, loading: true, error: "" }));
-    fetch(`/api/healthcare-jobs?role=${search.role}&location=${search.location}`, { signal: controller.signal })
+    fetch(`/api/job-match?role=${search.role}&location=${search.location}`, { signal: controller.signal })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Unable to load jobs.");

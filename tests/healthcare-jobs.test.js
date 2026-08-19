@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import handler from "../api/healthcare-jobs.js";
+import { healthcareJobsHandler as handler } from "../api/_healthcare-jobs.js";
 
 const invoke = async (query = {}) => {
   const headers = {};
