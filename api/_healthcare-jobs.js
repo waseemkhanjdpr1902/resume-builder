@@ -23,6 +23,26 @@ const locations = {
   fujairah: "Fujairah",
 };
 
+const roleTitleTerms = {
+  nurse: /\b(nurs|midwi|clinical facilitator)\w*/i,
+  doctor: /\b(doctor|physician|consultant|specialist|medical officer|surgeon|paediatric|pediatric)\w*/i,
+  pharmacist: /\b(pharmac|pharmacy)\w*/i,
+  dentist: /\b(dent|orthodont|prosthodont|periodont)\w*/i,
+  physiotherapist: /\b(physiotherap|physical therap)\w*/i,
+  laboratory: /\b(laborator|lab techn|patholog|phlebotom)\w*/i,
+  radiographer: /\b(radiograph|radiolog|imaging|sonograph)\w*/i,
+  coder: /\b(medical cod|clinical cod|medical bill)\w*/i,
+  assistant: /\b(healthcare assistant|health care assistant|nursing assistant|caregiver|patient care assistant)\w*/i,
+};
+
+const foreignCountry = /\b(oman|saudi arabia|qatar|bahrain|kuwait)\b/i;
+const uaeLocation = /\b(united arab emirates|uae|dubai|abu dhabi|sharjah|ajman|al ain|ras al khaimah|fujairah|umm al quwain)\b/i;
+const locationTerms = {
+  dubai: /\bdubai\b/i, "abu-dhabi": /\babu dhabi\b/i, sharjah: /\bsharjah\b/i,
+  ajman: /\bajman\b/i, "al-ain": /\bal ain\b/i, "ras-al-khaimah": /\bras al khaimah\b/i,
+  fujairah: /\bfujairah\b/i,
+};
+
 const memoryCache = new Map();
 const CACHE_MS = 6 * 60 * 60 * 1000;
 
@@ -52,6 +72,15 @@ const normalizeJob = (job) => ({
   maxSalary: Number.isFinite(job.job_max_salary) ? job.job_max_salary : null,
   salaryPeriod: safeText(job.job_salary_period, 30),
 });
+
+export const isRelevantUaeJob = (job, roleKey, locationKey) => {
+  const place = [job.location, job.city, job.state, job.country].filter(Boolean).join(" ");
+  const fullText = `${job.title} ${place} ${job.description || ""}`;
+  if (foreignCountry.test(place) && !uaeLocation.test(place)) return false;
+  if (locationKey !== "uae" && locationTerms[locationKey] && !locationTerms[locationKey].test(place)) return false;
+  if (roleKey !== "all" && roleTitleTerms[roleKey] && !roleTitleTerms[roleKey].test(fullText)) return false;
+  return true;
+};
 
 export async function healthcareJobsHandler(request, response) {
   response.setHeader("X-Content-Type-Options", "nosniff");
@@ -100,6 +129,7 @@ export async function healthcareJobsHandler(request, response) {
     const jobs = rawJobs
       .map(normalizeJob)
       .filter((job) => job.title && job.applyUrl)
+      .filter((job) => isRelevantUaeJob(job, roleKey, locationKey))
       .filter((job) => {
         const key = job.id || `${job.title}:${job.employer}:${job.location}`.toLowerCase();
         if (seen.has(key)) return false;

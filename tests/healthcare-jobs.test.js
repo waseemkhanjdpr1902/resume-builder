@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { healthcareJobsHandler as handler } from "../api/_healthcare-jobs.js";
+import { healthcareJobsHandler as handler, isRelevantUaeJob } from "../api/_healthcare-jobs.js";
 
 const invoke = async (query = {}) => {
   const headers = {};
@@ -19,6 +19,17 @@ test("healthcare jobs rejects unapproved role and location filters", async () =>
   const result = await invoke({ role: "software", location: "chicago" });
   assert.equal(result.statusCode, 400);
   assert.match(result.body.error, /valid healthcare role/i);
+});
+
+test("healthcare jobs removes clearly foreign vacancies from UAE results", () => {
+  assert.equal(isRelevantUaeJob({ title: "Hospital Manager", location: "Muscat, Oman" }, "all", "uae"), false);
+  assert.equal(isRelevantUaeJob({ title: "Hospital Manager", location: "Dubai, UAE" }, "all", "uae"), true);
+});
+
+test("profession and emirate filters reject mismatched results", () => {
+  assert.equal(isRelevantUaeJob({ title: "Registered Nurse", location: "Dubai" }, "nurse", "dubai"), true);
+  assert.equal(isRelevantUaeJob({ title: "Pharmacy Manager", location: "Dubai" }, "nurse", "dubai"), false);
+  assert.equal(isRelevantUaeJob({ title: "Registered Nurse", location: "Abu Dhabi" }, "nurse", "dubai"), false);
 });
 
 test("healthcare jobs keeps the provider key server-side and normalizes safe results", async () => {
