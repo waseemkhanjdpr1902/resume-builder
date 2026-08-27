@@ -4,15 +4,19 @@ import { FiArrowLeft, FiCheck, FiClock, FiLock, FiPlayCircle } from "react-icons
 import { useAuth } from "../provider/AuthProvider";
 import { getAcademyCourse } from "../data/academyCourses";
 import { hasAcademyPremiumAccess, loadCourseProgress, saveEnrollment } from "../services/academyService";
+import { loadGhostCourse } from "../services/academyContent";
 import "../css/academy-learning.css";
 
 export default function AcademyCourse() {
-  const { courseSlug } = useParams(), course = getAcademyCourse(courseSlug);
+  const { courseSlug } = useParams(), builtInCourse = getAcademyCourse(courseSlug);
+  const [ghostCourse, setGhostCourse] = useState(null);
+  const course = builtInCourse ? { ...builtInCourse, ...(ghostCourse || {}), slug: builtInCourse.slug, lessons: ghostCourse?.lessons || builtInCourse.lessons } : null;
   const { user, loading } = useAuth(), navigate = useNavigate();
   const [progress, setProgress] = useState({ enrolled: false, completed: [] });
   const [premium, setPremium] = useState(false);
+  useEffect(() => { loadGhostCourse(courseSlug).then(setGhostCourse); }, [courseSlug]);
   useEffect(() => {
-    if (!course || loading) return;
+    if (!builtInCourse || loading) return;
     Promise.all([loadCourseProgress(user?.id, course.slug), hasAcademyPremiumAccess(user?.id)])
       .then(([saved, access]) => { setProgress(saved); setPremium(access); });
   }, [courseSlug, user?.id, loading]);
