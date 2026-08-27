@@ -11,5 +11,7 @@ export async function loadExamBank(profession){
 export async function loadGhostCourse(slug){
   const response=await fetch("/api/academy-content",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"course",slug})});
   if(!response.ok)return null;
-  return (await response.json().catch(()=>({}))).course||null;
+  const course=(await response.json().catch(()=>({}))).course;
+  if(!course||typeof course.title!=="string"||!Array.isArray(course.lessons)||!course.lessons.every(lesson=>lesson&&typeof lesson.slug==="string"&&typeof lesson.title==="string"&&Array.isArray(lesson.content)))return null;
+  return course;
 }
