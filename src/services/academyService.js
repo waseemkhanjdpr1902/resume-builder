@@ -57,8 +57,8 @@ export const hasAcademyPremiumAccess = async userId => {
   if (!userId) return false;
   try {
     const { data } = await supabase.from("subscription_records")
-      .select("status,current_period_end").eq("user_id", userId).in("status", ["active", "paid"]).order("created_at", { ascending: false }).limit(1);
+      .select("status,expires_at").eq("owner_id", userId).in("status", ["active", "paid"]).order("created_at", { ascending: false }).limit(1);
     const subscription = data?.[0];
-    return Boolean(subscription && (!subscription.current_period_end || new Date(subscription.current_period_end) > new Date()));
+    return Boolean(subscription && (!subscription.expires_at || new Date(subscription.expires_at) > new Date()));
   } catch { return false; }
 };
