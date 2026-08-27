@@ -3,9 +3,9 @@ import { FiArrowRight, FiAward, FiBookOpen, FiBriefcase, FiCheckCircle, FiClipbo
 import "../css/academy.css";
 
 const paths = [
-  { icon: FiUsers, label: "Registered Nursing", meta: "DHA · DOH · MOHAP", description: "Clinical safety, fundamentals, ethics and GCC licensing preparation.", href: "/licensing-exam-prep", tone: "teal" },
-  { icon: FiBookOpen, label: "Pharmacist", meta: "DHA · DOH · MOHAP", description: "Pharmacotherapy, calculations, patient counselling and professional practice.", href: "/licensing-exam-prep", tone: "blue" },
-  { icon: FiClipboard, label: "Pharmacy Technician", meta: "GCC pathways", description: "Dispensing safety, inventory, calculations and technician responsibilities.", href: "/licensing-exam-prep", tone: "gold" },
+  { icon: FiUsers, label: "Registered Nursing", meta: "DHA · DOH · MOHAP", description: "Clinical safety, fundamentals, ethics and GCC licensing preparation.", href: "/academy/course/nursing-clinical-safety", tone: "teal" },
+  { icon: FiBookOpen, label: "Pharmacist", meta: "DHA · DOH · MOHAP", description: "Pharmacotherapy, calculations, patient counselling and professional practice.", href: "/academy/course/healthcare-career-launch", tone: "blue" },
+  { icon: FiClipboard, label: "Pharmacy Technician", meta: "GCC pathways", description: "Dispensing safety, inventory, calculations and technician responsibilities.", href: "/academy/course/gcc-licensing-foundations", tone: "gold" },
   { icon: FiGlobe, label: "Licensing Readiness", meta: "7 GCC pathways", description: "Documents, DataFlow preparation, regulator selection and eligibility guidance.", href: "/credential-readiness", tone: "violet" }
 ];
 
@@ -30,7 +30,7 @@ export default function Academy() {
           <span className="academy-kicker"><FiAward/> RESUAI ACADEMY</span>
           <h1>Prepare for licensing exams. Build your global healthcare career.</h1>
           <p>One guided learning space for healthcare professionals preparing for GCC licensing, profession-specific assessments, interviews and international applications.</p>
-          <div className="academy-actions"><a href="#learning-paths" className="academy-primary">Explore learning paths <FiArrowRight/></a><Link to="/licensing-exam-prep" className="academy-secondary">Try free exam practice</Link></div>
+          <div className="academy-actions"><a href="#learning-paths" className="academy-primary">Explore learning paths <FiArrowRight/></a><Link to="/academy/my-learning" className="academy-secondary">My Learning</Link></div>
           <div className="academy-proof"><span><FiCheckCircle/> Profession-specific</span><span><FiCheckCircle/> Original learning content</span><span><FiCheckCircle/> Mobile friendly</span></div>
         </div>
         <aside className="academy-roadmap">
