@@ -29,6 +29,7 @@ import CareerResources from "../pages/CareerResources";
 import CredentialReadiness from "../pages/CredentialReadiness";
 import LicensingExamPrep from "../pages/LicensingExamPrep";
 import UaeHealthcareJobs from "../pages/UaeHealthcareJobs";
+import Academy from "../pages/Academy";
 import { healthcareSeoPages } from "../data/healthcareSeoPages";
 
 const AppRoutes = () => <Routes>
@@ -40,6 +41,7 @@ const AppRoutes = () => <Routes>
   <Route exact path="/credential-readiness" element={<CredentialReadiness />} />
   <Route exact path="/licensing-exam-prep" element={<LicensingExamPrep />} />
   <Route exact path="/uae-healthcare-jobs" element={<UaeHealthcareJobs />} />
+  <Route exact path="/academy" element={<Academy />} />
   {["/healthcare-cv-examples","/gcc-eligibility-checker","/healthcare-interview-questions","/healthcare-salary-explorer","/application-tracker","/career-readiness-score"].map(path => <Route key={path} exact path={path} element={<CareerResources />} />)}
   {Object.keys(healthcareSeoPages).map(path => <Route key={path} exact path={path} element={<HealthcareSeoLanding />} />)}
   <Route exact path="/refund-policy" element={<RefundPolicy />} /><Route exact path="/redirecting" element={<RedirectMessagePage />} /><Route exact path="/contact" element={<Contact />} /><Route exact path="/privacy" element={<Privacy />} /><Route exact path="/about" element={<About />} /><Route exact path="/build-resume/:layout_type/:layout_id" element={<LayoutProvider><GenerateResume /></LayoutProvider>} /><Route path="*" element={<NotFound />} />
