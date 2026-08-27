@@ -4,14 +4,21 @@ import { FiArrowLeft, FiArrowRight, FiCheckCircle, FiLock } from "react-icons/fi
 import { useAuth } from "../provider/AuthProvider";
 import { getAcademyCourse, getAcademyLesson } from "../data/academyCourses";
 import { hasAcademyPremiumAccess, loadCourseProgress, saveLessonCompletion } from "../services/academyService";
+import { loadGhostLesson } from "../services/academyContent";
 import "../css/academy-learning.css";
 
 export default function AcademyLesson() {
-  const { courseSlug, lessonSlug } = useParams(), course = getAcademyCourse(courseSlug), lesson = getAcademyLesson(course, lessonSlug);
+  const { courseSlug, lessonSlug } = useParams(), course = getAcademyCourse(courseSlug), builtInLesson = getAcademyLesson(course, lessonSlug);
+  const [ghostLesson, setGhostLesson] = useState(null);
+  const lesson = ghostLesson || builtInLesson;
   const { user, loading } = useAuth(), navigate = useNavigate();
   const [ready, setReady] = useState(false), [premium, setPremium] = useState(false), [completed, setCompleted] = useState(false);
   useEffect(() => {
-    if (!course || !lesson || loading) return;
+    if (loading) return;
+    loadGhostLesson(courseSlug, lessonSlug).then(result => setGhostLesson(result?.lesson || null));
+  }, [courseSlug, lessonSlug, user?.id, loading]);
+  useEffect(() => {
+    if (!course || !builtInLesson || loading) return;
     Promise.all([hasAcademyPremiumAccess(user?.id), loadCourseProgress(user?.id, course.slug)]).then(([access, progress]) => {
       setPremium(access); setCompleted(progress.completed.includes(lesson.slug)); setReady(true);
     });
