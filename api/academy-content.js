@@ -41,14 +41,28 @@ async function activeSubscription(userId,token){
 export default async function handler(request,response){
   if(!secureJsonPost(request,response,12000))return;
   const type=request.body?.type||"questions";
-  if(type==="course"){
+  if(type==="course"||type==="lesson"){
     const slug=slugify(request.body?.slug);
     if(!slug)return response.status(400).json({error:"Course slug is required"});
     try{
       const post=await ghostPost(`academy-${slug}`);
-      const content=parseGhostJson(post?.plaintext);
-      return response.status(200).json({course:content?.course||null,source:content?.course?"ghost":"built-in"});
-    }catch{return response.status(200).json({course:null,source:"built-in"});}
+      const course=parseGhostJson(post?.plaintext)?.course;
+      if(!course||!Array.isArray(course.lessons))return response.status(200).json({course:null,lesson:null,source:"built-in"});
+      if(type==="course"){
+        const metadata={...course,lessons:course.lessons.map(({content,...lesson})=>lesson)};
+        return response.status(200).json({course:metadata,source:"ghost"});
+      }
+      const lessonSlug=slugify(request.body?.lessonSlug);
+      const lesson=course.lessons.find(item=>item.slug===lessonSlug);
+      if(!lesson)return response.status(404).json({error:"Lesson not found"});
+      if(!lesson.free){
+        if(!request.headers.authorization)return response.status(401).json({error:"Please sign in to continue"});
+        const user=await requireUser(request,response);
+        if(!user)return;
+        if(!(await activeSubscription(user.id,request.body?.accessToken)))return response.status(403).json({error:"An active Academy subscription is required"});
+      }
+      return response.status(200).json({lesson,source:"ghost"});
+    }catch{return response.status(200).json({course:null,lesson:null,source:"built-in"});}
   }
   const profession=professions.includes(request.body?.profession)?request.body.profession:"Nurse";
   const preview=fullBank(profession).slice(0,5);
