@@ -35,9 +35,39 @@ const roleTitleTerms = {
   assistant: /\b(healthcare assistant|health care assistant|nursing assistant|caregiver|patient care assistant)\w*/i,
 };
 
-const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer\w*|surgeon\w*|paediatric\w*|pediatric\w*|pharmac\w*|pharmacy\w*|dent\w*|orthodont\w*|prosthodont\w*|periodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|radiograph\w*|radiolog\w*|sonograph\w*|imaging techn\w*|laborator\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|caregiver\w*|patient care assistant\w*|respiratory therap\w*|dietitian\w*|nutritionist\w*|optomet\w*|audiolog\w*|paramedic\w*|emergency medical technician\w*|hospital manager\w*|clinic manager\w*|healthcare manager\w*|medical receptionist\w*)\b/i;
+const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer\w*|surgeon\w*|consultant\w*|clinical specialist\w*|paediatric\w*|pediatric\w*|pharmac\w*|pharmacy\w*|dent\w*|orthodont\w*|prosthodont\w*|periodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|radiograph\w*|radiolog\w*|sonograph\w*|imaging techn\w*|laborator\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|caregiver\w*|patient care assistant\w*|respiratory therap\w*|dietitian\w*|nutritionist\w*|optomet\w*|audiolog\w*|paramedic\w*|emergency medical technician\w*|hospital manager\w*|clinic manager\w*|healthcare manager\w*|medical receptionist\w*)\b/i;
 
-const allRoleSearchTerms = ["registered nurse", "doctor physician", "pharmacist", "allied health"];
+// Broad discovery terms intentionally cover the most common clinical and allied-health
+// titles used by UAE employers. Relevance + freshness filtering is still applied later.
+const allRoleSearchTerms = [
+  "registered nurse",
+  "doctor physician",
+  "pharmacist",
+  "dentist",
+  "physiotherapist",
+  "medical laboratory technician",
+  "radiographer radiology technician",
+  "medical coder",
+  "healthcare assistant nursing assistant",
+  "occupational therapist",
+  "respiratory therapist",
+  "dietitian nutritionist",
+  "paramedic emergency medical technician",
+  "medical receptionist clinic manager",
+];
+
+const roleSearchTerms = {
+  nurse: ["registered nurse", "staff nurse", "nursing", "midwife"],
+  doctor: ["doctor physician", "medical officer", "consultant physician", "specialist doctor"],
+  pharmacist: ["pharmacist", "clinical pharmacist", "hospital pharmacist", "pharmacy technician"],
+  dentist: ["dentist", "dental doctor", "orthodontist", "dental specialist"],
+  physiotherapist: ["physiotherapist", "physical therapist"],
+  laboratory: ["medical laboratory technician", "lab technologist", "phlebotomist", "pathology technician"],
+  radiographer: ["radiographer", "radiology technician", "sonographer", "imaging technologist"],
+  coder: ["medical coder", "clinical coder", "medical billing"],
+  assistant: ["healthcare assistant", "nursing assistant", "patient care assistant", "caregiver"],
+};
+
 const foreignCountry = /\b(oman|saudi arabia|qatar|bahrain|kuwait)\b/i;
 const uaeLocation = /\b(united arab emirates|uae|dubai|abu dhabi|sharjah|ajman|al ain|ras al khaimah|fujairah|umm al quwain)\b/i;
 const locationTerms = {
@@ -47,8 +77,8 @@ const locationTerms = {
 };
 
 const memoryCache = new Map();
-const CACHE_MS = 15 * 60 * 1000;
-const CACHE_VERSION = "v5-adzuna-strict-fresh";
+const CACHE_MS = 10 * 60 * 1000;
+const CACHE_VERSION = "v6-expanded-healthcare-discovery";
 const MAX_JOB_AGE_DAYS = 7;
 const FUTURE_TOLERANCE_MS = 6 * 60 * 60 * 1000;
 
@@ -100,31 +130,11 @@ const normalizeJoobleJob = (job) => ({
   salaryPeriod: safeText(job.salary, 80),
 });
 
-const normalizeAdzunaJob = (job) => ({
-  id: `adzuna:${safeText(String(job.id || ""), 280)}`,
-  provider: "Adzuna",
-  title: safeText(job.title, 180),
-  employer: safeText(job.company?.display_name, 140) || "Employer not listed",
-  employerLogo: "",
-  city: "",
-  state: "",
-  country: "United Arab Emirates",
-  location: safeText(job.location?.display_name || (Array.isArray(job.location?.area) ? job.location.area.join(", ") : ""), 160),
-  employmentType: safeText(job.contract_type || job.contract_time, 60),
-  description: safeText(job.description),
-  applyUrl: safeUrl(job.redirect_url),
-  publisher: "Adzuna",
-  postedAt: safeText(job.created, 60),
-  minSalary: Number.isFinite(job.salary_min) ? job.salary_min : null,
-  maxSalary: Number.isFinite(job.salary_max) ? job.salary_max : null,
-  salaryPeriod: "",
-});
-
 const dedupeKey = (job) => [job.title, job.employer, job.location || job.city]
   .map((value) => safeText(value, 180).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim())
   .join(":");
 
-const searchTermsForRole = (roleKey) => roleKey === "all" ? allRoleSearchTerms : [roles[roleKey]];
+const searchTermsForRole = (roleKey) => roleKey === "all" ? allRoleSearchTerms : (roleSearchTerms[roleKey] || [roles[roleKey]]);
 
 export const isFreshJob = (job, now = Date.now()) => {
   if (!job.postedAt) return false;
@@ -140,6 +150,7 @@ const fetchJSearchQuery = async (term, locationKey) => {
   url.searchParams.set("country", "ae");
   url.searchParams.set("language", "en");
   url.searchParams.set("num_pages", "2");
+  url.searchParams.set("date_posted", "week");
   const apiResponse = await fetch(url, { headers: { "x-api-key": process.env.JSEARCH_API_KEY, Accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
   if (!apiResponse.ok) throw new Error(`JSearch:${apiResponse.status}`);
   const result = await apiResponse.json();
@@ -174,29 +185,10 @@ const fetchJoobleJobs = async (roleKey, locationKey) => {
   return { provider: "Jooble", configured: true, jobs };
 };
 
-const fetchAdzunaQuery = async (term, locationKey) => {
-  const url = new URL("https://api.adzuna.com/v1/api/jobs/ae/search/1");
-  url.searchParams.set("app_id", process.env.ADZUNA_APP_ID);
-  url.searchParams.set("app_key", process.env.ADZUNA_APP_KEY);
-  url.searchParams.set("results_per_page", "50");
-  url.searchParams.set("what", term);
-  url.searchParams.set("where", locations[locationKey]);
-  url.searchParams.set("sort_by", "date");
-  url.searchParams.set("max_days_old", String(MAX_JOB_AGE_DAYS));
-  url.searchParams.set("content-type", "application/json");
-  const apiResponse = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
-  if (!apiResponse.ok) throw new Error(`Adzuna:${apiResponse.status}`);
-  const result = await apiResponse.json();
-  return (Array.isArray(result.results) ? result.results : []).map(normalizeAdzunaJob);
-};
-
-const fetchAdzunaJobs = async (roleKey, locationKey) => {
-  if (!process.env.ADZUNA_APP_ID || !process.env.ADZUNA_APP_KEY) return { provider: "Adzuna", configured: false, jobs: [] };
-  const queryResults = await Promise.allSettled(searchTermsForRole(roleKey).map((term) => fetchAdzunaQuery(term, locationKey)));
-  const jobs = queryResults.filter((item) => item.status === "fulfilled").flatMap((item) => item.value);
-  if (!jobs.length && queryResults.some((item) => item.status === "rejected")) throw queryResults.find((item) => item.status === "rejected").reason;
-  return { provider: "Adzuna", configured: true, jobs };
-};
+// Adzuna's standard country endpoint currently returns 404 for UAE (ae). Do not
+// spend requests against an unsupported endpoint or mark the whole feed partial.
+// Keep the credentials server-side for future use if Adzuna adds UAE coverage.
+const fetchAdzunaJobs = async () => ({ provider: "Adzuna", configured: false, jobs: [] });
 
 export const isRelevantUaeJob = (job, roleKey, locationKey) => {
   const place = [job.location, job.city, job.state, job.country].filter(Boolean).join(" ");
@@ -218,7 +210,7 @@ export async function healthcareJobsHandler(request, response) {
   const roleKey = typeof request.query.role === "string" ? request.query.role : "all";
   const locationKey = typeof request.query.location === "string" ? request.query.location : "uae";
   if (!roles[roleKey] || !locations[locationKey]) return response.status(400).json({ error: "Select a valid healthcare role and UAE location." });
-  const hasAnyProvider = Boolean(process.env.JSEARCH_API_KEY || process.env.JOOBLE_API_KEY || (process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY));
+  const hasAnyProvider = Boolean(process.env.JSEARCH_API_KEY || process.env.JOOBLE_API_KEY);
   if (!hasAnyProvider) return response.status(503).json({ error: "The healthcare jobs service is not configured yet." });
 
   const cacheKey = `${CACHE_VERSION}:${roleKey}:${locationKey}`;
@@ -250,6 +242,7 @@ export async function healthcareJobsHandler(request, response) {
       providers: successful.filter((item) => item.configured).map((item) => item.provider),
       providerErrors: failed.map((item) => safeText(item.reason?.message || "Provider error", 120)),
       partial: failed.length > 0,
+      discoveryTerms: searchTermsForRole(roleKey).length,
     };
     memoryCache.set(cacheKey, { payload, createdAt: Date.now() });
     return response.status(200).json(payload);
