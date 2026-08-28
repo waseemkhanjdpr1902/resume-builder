@@ -7,4 +7,18 @@ Disallow: /redirecting
 Disallow: /get-started
 Disallow: /ai-assistant
 
+# Search and answer-engine crawlers. GPTBot is intentionally not required here:
+# OAI-SearchBot controls discovery in ChatGPT Search.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
 Sitemap: https://www.resuaibuilder.com/sitemap.xml
