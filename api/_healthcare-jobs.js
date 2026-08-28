@@ -47,11 +47,10 @@ const locationTerms = {
 };
 
 const memoryCache = new Map();
-const CACHE_MS = 2 * 60 * 60 * 1000;
-const CACHE_VERSION = "v3-fresh";
-const JSEARCH_MAX_AGE_DAYS = 30;
-const JOOBLE_MAX_AGE_DAYS = 14;
-const FUTURE_TOLERANCE_MS = 2 * 86400000;
+const CACHE_MS = 15 * 60 * 1000;
+const CACHE_VERSION = "v4-strict-fresh";
+const MAX_JOB_AGE_DAYS = 7;
+const FUTURE_TOLERANCE_MS = 6 * 60 * 60 * 1000;
 
 const safeText = (value, max = 5000) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeUrl = (value) => {
@@ -112,10 +111,7 @@ export const isFreshJob = (job, now = Date.now()) => {
   const posted = Date.parse(job.postedAt);
   if (!Number.isFinite(posted)) return false;
   if (posted > now + FUTURE_TOLERANCE_MS) return false;
-  const maxDays = job.provider === "Jooble" || String(job.id || "").startsWith("jooble:")
-    ? JOOBLE_MAX_AGE_DAYS
-    : JSEARCH_MAX_AGE_DAYS;
-  return now - posted <= maxDays * 86400000;
+  return now - posted <= MAX_JOB_AGE_DAYS * 86400000;
 };
 
 const fetchJSearchQuery = async (term, locationKey) => {
@@ -179,7 +175,11 @@ export const isRelevantUaeJob = (job, roleKey, locationKey) => {
 
 export async function healthcareJobsHandler(request, response) {
   response.setHeader("X-Content-Type-Options", "nosniff");
-  response.setHeader("Cache-Control", "public, s-maxage=7200, stale-while-revalidate=21600");
+  // Strict freshness mode: never allow CDN/browser stale-while-revalidate fallback.
+  response.setHeader("Cache-Control", "no-store, max-age=0");
+  response.setHeader("Pragma", "no-cache");
+  response.setHeader("Expires", "0");
+
   if (request.method !== "GET") {
     response.setHeader("Allow", "GET");
     return response.status(405).json({ error: "Method not allowed" });
@@ -192,7 +192,9 @@ export async function healthcareJobsHandler(request, response) {
 
   const cacheKey = `${CACHE_VERSION}:${roleKey}:${locationKey}`;
   const cached = memoryCache.get(cacheKey);
-  if (cached && Date.now() - cached.createdAt < CACHE_MS) return response.status(200).json({ ...cached.payload, cached: true });
+  if (cached && Date.now() - cached.createdAt < CACHE_MS) {
+    return response.status(200).json({ ...cached.payload, cached: true, cacheAgeSeconds: Math.floor((Date.now() - cached.createdAt) / 1000) });
+  }
 
   try {
     const settled = await Promise.allSettled([fetchJSearchJobs(roleKey, locationKey), fetchJoobleJobs(roleKey, locationKey)]);
@@ -200,9 +202,14 @@ export async function healthcareJobsHandler(request, response) {
     const configured = successful.filter((item) => item.configured);
     const failed = settled.filter((item) => item.status === "rejected");
     failed.forEach((item) => console.error("Healthcare jobs provider failed", item.reason?.message || item.reason));
+
     if (!configured.length && failed.length) {
       const rateLimited = failed.some((item) => /:429$/.test(item.reason?.message || ""));
-      return response.status(rateLimited ? 429 : 502).json({ error: rateLimited ? "The job search limit has been reached. Please try again later." : "Live jobs are temporarily unavailable." });
+      return response.status(rateLimited ? 429 : 502).json({
+        jobs: [],
+        staleFallbackUsed: false,
+        error: rateLimited ? "Live job providers are temporarily rate-limited. No older jobs are being shown." : "Live jobs are temporarily unavailable. No stale jobs are being shown.",
+      });
     }
 
     const seen = new Set();
@@ -224,14 +231,21 @@ export async function healthcareJobsHandler(request, response) {
       role: roleKey,
       location: locationKey,
       fetchedAt: new Date().toISOString(),
-      freshnessPolicy: { jsearchMaxAgeDays: JSEARCH_MAX_AGE_DAYS, joobleMaxAgeDays: JOOBLE_MAX_AGE_DAYS, missingDatesExcluded: true },
+      staleFallbackUsed: false,
+      freshnessPolicy: {
+        maxAgeDays: MAX_JOB_AGE_DAYS,
+        missingDatesExcluded: true,
+        invalidDatesExcluded: true,
+        staleCacheFallback: false,
+      },
       providers: successful.filter((item) => item.configured).map((item) => item.provider),
       partial: failed.length > 0,
     };
+
     memoryCache.set(cacheKey, { payload, createdAt: Date.now() });
     return response.status(200).json(payload);
   } catch (error) {
     console.error("Healthcare job search failed", error?.message || error);
-    return response.status(502).json({ error: "Live jobs are temporarily unavailable. Please try again shortly." });
+    return response.status(502).json({ jobs: [], staleFallbackUsed: false, error: "Live jobs are temporarily unavailable. No stale jobs are being shown." });
   }
 }
