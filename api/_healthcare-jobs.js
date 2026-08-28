@@ -35,17 +35,9 @@ const roleTitleTerms = {
   assistant: /\b(healthcare assistant|health care assistant|nursing assistant|caregiver|patient care assistant)\w*/i,
 };
 
-// The broad "all" search must still be healthcare-specific. Provider searches for
-// the word "healthcare" alone can return unrelated office/support jobs.
 const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer\w*|surgeon\w*|paediatric\w*|pediatric\w*|pharmac\w*|pharmacy\w*|dent\w*|orthodont\w*|prosthodont\w*|periodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|radiograph\w*|radiolog\w*|sonograph\w*|imaging techn\w*|laborator\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|caregiver\w*|patient care assistant\w*|respiratory therap\w*|dietitian\w*|nutritionist\w*|optomet\w*|audiolog\w*|paramedic\w*|emergency medical technician\w*|hospital manager\w*|clinic manager\w*|healthcare manager\w*|medical receptionist\w*)\b/i;
 
-const allRoleSearchTerms = [
-  "registered nurse",
-  "doctor physician",
-  "pharmacist",
-  "allied health",
-];
-
+const allRoleSearchTerms = ["registered nurse", "doctor physician", "pharmacist", "allied health"];
 const foreignCountry = /\b(oman|saudi arabia|qatar|bahrain|kuwait)\b/i;
 const uaeLocation = /\b(united arab emirates|uae|dubai|abu dhabi|sharjah|ajman|al ain|ras al khaimah|fujairah|umm al quwain)\b/i;
 const locationTerms = {
@@ -55,8 +47,11 @@ const locationTerms = {
 };
 
 const memoryCache = new Map();
-const CACHE_MS = 6 * 60 * 60 * 1000;
-const CACHE_VERSION = "v2";
+const CACHE_MS = 2 * 60 * 60 * 1000;
+const CACHE_VERSION = "v3-fresh";
+const JSEARCH_MAX_AGE_DAYS = 30;
+const JOOBLE_MAX_AGE_DAYS = 14;
+const FUTURE_TOLERANCE_MS = 2 * 86400000;
 
 const safeText = (value, max = 5000) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeUrl = (value) => {
@@ -68,6 +63,7 @@ const safeUrl = (value) => {
 
 const normalizeJSearchJob = (job) => ({
   id: `jsearch:${safeText(job.job_id, 280)}`,
+  provider: "JSearch",
   title: safeText(job.job_title, 180),
   employer: safeText(job.employer_name, 140) || "Employer not listed",
   employerLogo: safeUrl(job.employer_logo),
@@ -87,6 +83,7 @@ const normalizeJSearchJob = (job) => ({
 
 const normalizeJoobleJob = (job) => ({
   id: `jooble:${safeText(String(job.id || ""), 280)}`,
+  provider: "Jooble",
   title: safeText(job.title, 180),
   employer: safeText(job.company, 140) || "Employer not listed",
   employerLogo: "",
@@ -110,6 +107,17 @@ const dedupeKey = (job) => [job.title, job.employer, job.location || job.city]
 
 const searchTermsForRole = (roleKey) => roleKey === "all" ? allRoleSearchTerms : [roles[roleKey]];
 
+export const isFreshJob = (job, now = Date.now()) => {
+  if (!job.postedAt) return false;
+  const posted = Date.parse(job.postedAt);
+  if (!Number.isFinite(posted)) return false;
+  if (posted > now + FUTURE_TOLERANCE_MS) return false;
+  const maxDays = job.provider === "Jooble" || String(job.id || "").startsWith("jooble:")
+    ? JOOBLE_MAX_AGE_DAYS
+    : JSEARCH_MAX_AGE_DAYS;
+  return now - posted <= maxDays * 86400000;
+};
+
 const fetchJSearchQuery = async (term, locationKey) => {
   const url = new URL("https://api.openwebninja.com/jsearch/search-v2");
   url.searchParams.set("query", `${term} jobs in ${locations[locationKey]}`);
@@ -130,9 +138,7 @@ const fetchJSearchJobs = async (roleKey, locationKey) => {
   if (!process.env.JSEARCH_API_KEY) return { provider: "JSearch", configured: false, jobs: [] };
   const queryResults = await Promise.allSettled(searchTermsForRole(roleKey).map((term) => fetchJSearchQuery(term, locationKey)));
   const jobs = queryResults.filter((item) => item.status === "fulfilled").flatMap((item) => item.value);
-  if (!jobs.length && queryResults.some((item) => item.status === "rejected")) {
-    throw queryResults.find((item) => item.status === "rejected").reason;
-  }
+  if (!jobs.length && queryResults.some((item) => item.status === "rejected")) throw queryResults.find((item) => item.status === "rejected").reason;
   return { provider: "JSearch", configured: true, jobs };
 };
 
@@ -144,13 +150,7 @@ const fetchJoobleQuery = async (term, locationKey) => {
   const apiResponse = await fetch(endpoint, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({
-      keywords: term,
-      location: locations[locationKey],
-      page: "1",
-      ResultOnPage: "50",
-      SearchMode: "1",
-    }),
+    body: JSON.stringify({ keywords: term, location: locations[locationKey], page: "1", ResultOnPage: "50", SearchMode: "1" }),
     signal: AbortSignal.timeout(12_000),
   });
   if (!apiResponse.ok) throw new Error(`Jooble:${apiResponse.status}`);
@@ -163,9 +163,7 @@ const fetchJoobleJobs = async (roleKey, locationKey) => {
   if (!process.env.JOOBLE_API_KEY) return { provider: "Jooble", configured: false, jobs: [] };
   const queryResults = await Promise.allSettled(searchTermsForRole(roleKey).map((term) => fetchJoobleQuery(term, locationKey)));
   const jobs = queryResults.filter((item) => item.status === "fulfilled").flatMap((item) => item.value);
-  if (!jobs.length && queryResults.some((item) => item.status === "rejected")) {
-    throw queryResults.find((item) => item.status === "rejected").reason;
-  }
+  if (!jobs.length && queryResults.some((item) => item.status === "rejected")) throw queryResults.find((item) => item.status === "rejected").reason;
   return { provider: "Jooble", configured: true, jobs };
 };
 
@@ -181,7 +179,7 @@ export const isRelevantUaeJob = (job, roleKey, locationKey) => {
 
 export async function healthcareJobsHandler(request, response) {
   response.setHeader("X-Content-Type-Options", "nosniff");
-  response.setHeader("Cache-Control", "public, s-maxage=21600, stale-while-revalidate=86400");
+  response.setHeader("Cache-Control", "public, s-maxage=7200, stale-while-revalidate=21600");
   if (request.method !== "GET") {
     response.setHeader("Allow", "GET");
     return response.status(405).json({ error: "Method not allowed" });
@@ -189,38 +187,29 @@ export async function healthcareJobsHandler(request, response) {
 
   const roleKey = typeof request.query.role === "string" ? request.query.role : "all";
   const locationKey = typeof request.query.location === "string" ? request.query.location : "uae";
-  if (!roles[roleKey] || !locations[locationKey]) {
-    return response.status(400).json({ error: "Select a valid healthcare role and UAE location." });
-  }
-  if (!process.env.JSEARCH_API_KEY && !process.env.JOOBLE_API_KEY) {
-    return response.status(503).json({ error: "The healthcare jobs service is not configured yet." });
-  }
+  if (!roles[roleKey] || !locations[locationKey]) return response.status(400).json({ error: "Select a valid healthcare role and UAE location." });
+  if (!process.env.JSEARCH_API_KEY && !process.env.JOOBLE_API_KEY) return response.status(503).json({ error: "The healthcare jobs service is not configured yet." });
 
   const cacheKey = `${CACHE_VERSION}:${roleKey}:${locationKey}`;
   const cached = memoryCache.get(cacheKey);
-  if (cached && Date.now() - cached.createdAt < CACHE_MS) {
-    return response.status(200).json({ ...cached.payload, cached: true });
-  }
+  if (cached && Date.now() - cached.createdAt < CACHE_MS) return response.status(200).json({ ...cached.payload, cached: true });
 
   try {
-    const settled = await Promise.allSettled([
-      fetchJSearchJobs(roleKey, locationKey),
-      fetchJoobleJobs(roleKey, locationKey),
-    ]);
+    const settled = await Promise.allSettled([fetchJSearchJobs(roleKey, locationKey), fetchJoobleJobs(roleKey, locationKey)]);
     const successful = settled.filter((item) => item.status === "fulfilled").map((item) => item.value);
     const configured = successful.filter((item) => item.configured);
     const failed = settled.filter((item) => item.status === "rejected");
     failed.forEach((item) => console.error("Healthcare jobs provider failed", item.reason?.message || item.reason));
     if (!configured.length && failed.length) {
       const rateLimited = failed.some((item) => /:429$/.test(item.reason?.message || ""));
-      return response.status(rateLimited ? 429 : 502).json({
-        error: rateLimited ? "The job search limit has been reached. Please try again later." : "Live jobs are temporarily unavailable.",
-      });
+      return response.status(rateLimited ? 429 : 502).json({ error: rateLimited ? "The job search limit has been reached. Please try again later." : "Live jobs are temporarily unavailable." });
     }
+
     const seen = new Set();
     const jobs = successful
       .flatMap((item) => item.jobs)
       .filter((job) => job.title && job.applyUrl)
+      .filter((job) => isFreshJob(job))
       .filter((job) => isRelevantUaeJob(job, roleKey, locationKey))
       .filter((job) => {
         const key = dedupeKey(job) || job.id;
@@ -228,9 +217,14 @@ export async function healthcareJobsHandler(request, response) {
         seen.add(key);
         return true;
       })
-      .sort((a, b) => (Date.parse(b.postedAt) || 0) - (Date.parse(a.postedAt) || 0));
+      .sort((a, b) => Date.parse(b.postedAt) - Date.parse(a.postedAt));
+
     const payload = {
-      jobs, role: roleKey, location: locationKey, fetchedAt: new Date().toISOString(),
+      jobs,
+      role: roleKey,
+      location: locationKey,
+      fetchedAt: new Date().toISOString(),
+      freshnessPolicy: { jsearchMaxAgeDays: JSEARCH_MAX_AGE_DAYS, joobleMaxAgeDays: JOOBLE_MAX_AGE_DAYS, missingDatesExcluded: true },
       providers: successful.filter((item) => item.configured).map((item) => item.provider),
       partial: failed.length > 0,
     };
