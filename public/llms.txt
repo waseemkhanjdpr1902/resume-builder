@@ -1,0 +1,24 @@
+# ResuAIBuilder
+
+> ResuAIBuilder is an independent AI-assisted healthcare CV, ATS checking and career-readiness platform for nurses, doctors, pharmacists and allied health professionals applying in India, the GCC and international markets.
+
+Canonical website: https://www.resuaibuilder.com/
+
+## Primary resources
+
+- [Healthcare CV Builder](https://www.resuaibuilder.com/): Build and improve an ATS-friendly healthcare CV.
+- [Nurse Resume Builder](https://www.resuaibuilder.com/nurse-resume-builder): Nursing CV structure, clinical evidence and registration guidance.
+- [Doctor CV Builder](https://www.resuaibuilder.com/doctor-cv-builder): Medical appointments, procedures, audits, teaching and research.
+- [Pharmacist Resume Builder](https://www.resuaibuilder.com/pharmacist-resume-builder): Hospital, clinical, community and regulatory pharmacy CVs.
+- [DHA CV Builder](https://www.resuaibuilder.com/dha-cv-builder): Accurate presentation of DHA and DataFlow application status.
+- [Healthcare ATS Checker](https://www.resuaibuilder.com/healthcare-ats-checker): Healthcare-specific CV structure, credentials and keyword checks.
+- [Gulf Healthcare CV](https://www.resuaibuilder.com/gulf-healthcare-cv): CV guidance for UAE, Saudi Arabia, Qatar and Oman applications.
+- [Medical CV Examples](https://www.resuaibuilder.com/medical-cv-examples): Evidence-led examples that users must adapt to their verified experience.
+- [UAE Healthcare Jobs](https://www.resuaibuilder.com/uae-healthcare-jobs): Current opportunities linking to original job sources.
+
+## Editorial principles
+
+- AI-assisted wording must be checked by the user.
+- Credentials, licence status, experience and performance claims must not be invented.
+- Licensing information is educational and should be confirmed with the relevant official authority.
+- ResuAIBuilder is independent and is not affiliated with DHA, DOH, MOHAP, SCFHS or another regulator.
