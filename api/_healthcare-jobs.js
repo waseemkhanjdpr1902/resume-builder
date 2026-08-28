@@ -48,7 +48,7 @@ const locationTerms = {
 
 const memoryCache = new Map();
 const CACHE_MS = 15 * 60 * 1000;
-const CACHE_VERSION = "v4-strict-fresh";
+const CACHE_VERSION = "v5-adzuna-strict-fresh";
 const MAX_JOB_AGE_DAYS = 7;
 const FUTURE_TOLERANCE_MS = 6 * 60 * 60 * 1000;
 
@@ -100,6 +100,26 @@ const normalizeJoobleJob = (job) => ({
   salaryPeriod: safeText(job.salary, 80),
 });
 
+const normalizeAdzunaJob = (job) => ({
+  id: `adzuna:${safeText(String(job.id || ""), 280)}`,
+  provider: "Adzuna",
+  title: safeText(job.title, 180),
+  employer: safeText(job.company?.display_name, 140) || "Employer not listed",
+  employerLogo: "",
+  city: "",
+  state: "",
+  country: "United Arab Emirates",
+  location: safeText(job.location?.display_name || (Array.isArray(job.location?.area) ? job.location.area.join(", ") : ""), 160),
+  employmentType: safeText(job.contract_type || job.contract_time, 60),
+  description: safeText(job.description),
+  applyUrl: safeUrl(job.redirect_url),
+  publisher: "Adzuna",
+  postedAt: safeText(job.created, 60),
+  minSalary: Number.isFinite(job.salary_min) ? job.salary_min : null,
+  maxSalary: Number.isFinite(job.salary_max) ? job.salary_max : null,
+  salaryPeriod: "",
+});
+
 const dedupeKey = (job) => [job.title, job.employer, job.location || job.city]
   .map((value) => safeText(value, 180).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim())
   .join(":");
@@ -120,10 +140,7 @@ const fetchJSearchQuery = async (term, locationKey) => {
   url.searchParams.set("country", "ae");
   url.searchParams.set("language", "en");
   url.searchParams.set("num_pages", "2");
-  const apiResponse = await fetch(url, {
-    headers: { "x-api-key": process.env.JSEARCH_API_KEY, Accept: "application/json" },
-    signal: AbortSignal.timeout(12_000),
-  });
+  const apiResponse = await fetch(url, { headers: { "x-api-key": process.env.JSEARCH_API_KEY, Accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
   if (!apiResponse.ok) throw new Error(`JSearch:${apiResponse.status}`);
   const result = await apiResponse.json();
   const rawJobs = Array.isArray(result.data) ? result.data : Array.isArray(result.data?.jobs) ? result.data.jobs : [];
@@ -143,16 +160,10 @@ const fetchJoobleQuery = async (term, locationKey) => {
   const base = new URL(configuredBase);
   if (base.protocol !== "https:") throw new Error("Jooble:invalid-base-url");
   const endpoint = new URL(`${base.toString().replace(/\/+$/, "")}/${encodeURIComponent(process.env.JOOBLE_API_KEY)}`);
-  const apiResponse = await fetch(endpoint, {
-    method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ keywords: term, location: locations[locationKey], page: "1", ResultOnPage: "50", SearchMode: "1" }),
-    signal: AbortSignal.timeout(12_000),
-  });
+  const apiResponse = await fetch(endpoint, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ keywords: term, location: locations[locationKey], page: "1", ResultOnPage: "50", SearchMode: "1" }), signal: AbortSignal.timeout(12_000) });
   if (!apiResponse.ok) throw new Error(`Jooble:${apiResponse.status}`);
   const result = await apiResponse.json();
-  const rawJobs = Array.isArray(result.jobs) ? result.jobs : [];
-  return rawJobs.map(normalizeJoobleJob);
+  return (Array.isArray(result.jobs) ? result.jobs : []).map(normalizeJoobleJob);
 };
 
 const fetchJoobleJobs = async (roleKey, locationKey) => {
@@ -161,6 +172,30 @@ const fetchJoobleJobs = async (roleKey, locationKey) => {
   const jobs = queryResults.filter((item) => item.status === "fulfilled").flatMap((item) => item.value);
   if (!jobs.length && queryResults.some((item) => item.status === "rejected")) throw queryResults.find((item) => item.status === "rejected").reason;
   return { provider: "Jooble", configured: true, jobs };
+};
+
+const fetchAdzunaQuery = async (term, locationKey) => {
+  const url = new URL("https://api.adzuna.com/v1/api/jobs/ae/search/1");
+  url.searchParams.set("app_id", process.env.ADZUNA_APP_ID);
+  url.searchParams.set("app_key", process.env.ADZUNA_APP_KEY);
+  url.searchParams.set("results_per_page", "50");
+  url.searchParams.set("what", term);
+  url.searchParams.set("where", locations[locationKey]);
+  url.searchParams.set("sort_by", "date");
+  url.searchParams.set("max_days_old", String(MAX_JOB_AGE_DAYS));
+  url.searchParams.set("content-type", "application/json");
+  const apiResponse = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
+  if (!apiResponse.ok) throw new Error(`Adzuna:${apiResponse.status}`);
+  const result = await apiResponse.json();
+  return (Array.isArray(result.results) ? result.results : []).map(normalizeAdzunaJob);
+};
+
+const fetchAdzunaJobs = async (roleKey, locationKey) => {
+  if (!process.env.ADZUNA_APP_ID || !process.env.ADZUNA_APP_KEY) return { provider: "Adzuna", configured: false, jobs: [] };
+  const queryResults = await Promise.allSettled(searchTermsForRole(roleKey).map((term) => fetchAdzunaQuery(term, locationKey)));
+  const jobs = queryResults.filter((item) => item.status === "fulfilled").flatMap((item) => item.value);
+  if (!jobs.length && queryResults.some((item) => item.status === "rejected")) throw queryResults.find((item) => item.status === "rejected").reason;
+  return { provider: "Adzuna", configured: true, jobs };
 };
 
 export const isRelevantUaeJob = (job, roleKey, locationKey) => {
@@ -175,73 +210,47 @@ export const isRelevantUaeJob = (job, roleKey, locationKey) => {
 
 export async function healthcareJobsHandler(request, response) {
   response.setHeader("X-Content-Type-Options", "nosniff");
-  // Strict freshness mode: never allow CDN/browser stale-while-revalidate fallback.
   response.setHeader("Cache-Control", "no-store, max-age=0");
   response.setHeader("Pragma", "no-cache");
   response.setHeader("Expires", "0");
-
-  if (request.method !== "GET") {
-    response.setHeader("Allow", "GET");
-    return response.status(405).json({ error: "Method not allowed" });
-  }
+  if (request.method !== "GET") { response.setHeader("Allow", "GET"); return response.status(405).json({ error: "Method not allowed" }); }
 
   const roleKey = typeof request.query.role === "string" ? request.query.role : "all";
   const locationKey = typeof request.query.location === "string" ? request.query.location : "uae";
   if (!roles[roleKey] || !locations[locationKey]) return response.status(400).json({ error: "Select a valid healthcare role and UAE location." });
-  if (!process.env.JSEARCH_API_KEY && !process.env.JOOBLE_API_KEY) return response.status(503).json({ error: "The healthcare jobs service is not configured yet." });
+  const hasAnyProvider = Boolean(process.env.JSEARCH_API_KEY || process.env.JOOBLE_API_KEY || (process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY));
+  if (!hasAnyProvider) return response.status(503).json({ error: "The healthcare jobs service is not configured yet." });
 
   const cacheKey = `${CACHE_VERSION}:${roleKey}:${locationKey}`;
   const cached = memoryCache.get(cacheKey);
-  if (cached && Date.now() - cached.createdAt < CACHE_MS) {
-    return response.status(200).json({ ...cached.payload, cached: true, cacheAgeSeconds: Math.floor((Date.now() - cached.createdAt) / 1000) });
-  }
+  if (cached && Date.now() - cached.createdAt < CACHE_MS) return response.status(200).json({ ...cached.payload, cached: true, cacheAgeSeconds: Math.floor((Date.now() - cached.createdAt) / 1000) });
 
   try {
-    const settled = await Promise.allSettled([fetchJSearchJobs(roleKey, locationKey), fetchJoobleJobs(roleKey, locationKey)]);
+    const settled = await Promise.allSettled([fetchJSearchJobs(roleKey, locationKey), fetchJoobleJobs(roleKey, locationKey), fetchAdzunaJobs(roleKey, locationKey)]);
     const successful = settled.filter((item) => item.status === "fulfilled").map((item) => item.value);
     const configured = successful.filter((item) => item.configured);
     const failed = settled.filter((item) => item.status === "rejected");
     failed.forEach((item) => console.error("Healthcare jobs provider failed", item.reason?.message || item.reason));
-
     if (!configured.length && failed.length) {
       const rateLimited = failed.some((item) => /:429$/.test(item.reason?.message || ""));
-      return response.status(rateLimited ? 429 : 502).json({
-        jobs: [],
-        staleFallbackUsed: false,
-        error: rateLimited ? "Live job providers are temporarily rate-limited. No older jobs are being shown." : "Live jobs are temporarily unavailable. No stale jobs are being shown.",
-      });
+      return response.status(rateLimited ? 429 : 502).json({ jobs: [], staleFallbackUsed: false, error: rateLimited ? "Live job providers are temporarily rate-limited. No older jobs are being shown." : "Live jobs are temporarily unavailable. No stale jobs are being shown." });
     }
 
     const seen = new Set();
-    const jobs = successful
-      .flatMap((item) => item.jobs)
+    const jobs = successful.flatMap((item) => item.jobs)
       .filter((job) => job.title && job.applyUrl)
       .filter((job) => isFreshJob(job))
       .filter((job) => isRelevantUaeJob(job, roleKey, locationKey))
-      .filter((job) => {
-        const key = dedupeKey(job) || job.id;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
+      .filter((job) => { const key = dedupeKey(job) || job.id; if (seen.has(key)) return false; seen.add(key); return true; })
       .sort((a, b) => Date.parse(b.postedAt) - Date.parse(a.postedAt));
 
     const payload = {
-      jobs,
-      role: roleKey,
-      location: locationKey,
-      fetchedAt: new Date().toISOString(),
-      staleFallbackUsed: false,
-      freshnessPolicy: {
-        maxAgeDays: MAX_JOB_AGE_DAYS,
-        missingDatesExcluded: true,
-        invalidDatesExcluded: true,
-        staleCacheFallback: false,
-      },
+      jobs, role: roleKey, location: locationKey, fetchedAt: new Date().toISOString(), staleFallbackUsed: false,
+      freshnessPolicy: { maxAgeDays: MAX_JOB_AGE_DAYS, missingDatesExcluded: true, invalidDatesExcluded: true, staleCacheFallback: false },
       providers: successful.filter((item) => item.configured).map((item) => item.provider),
+      providerErrors: failed.map((item) => safeText(item.reason?.message || "Provider error", 120)),
       partial: failed.length > 0,
     };
-
     memoryCache.set(cacheKey, { payload, createdAt: Date.now() });
     return response.status(200).json(payload);
   } catch (error) {
