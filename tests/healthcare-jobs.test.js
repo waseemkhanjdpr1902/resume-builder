@@ -34,8 +34,10 @@ test("profession and emirate filters reject mismatched results", () => {
 
 test("healthcare jobs keeps the provider key server-side and normalizes safe results", async () => {
   const previousKey = process.env.JSEARCH_API_KEY;
+  const previousJoobleKey = process.env.JOOBLE_API_KEY;
   const previousFetch = global.fetch;
   process.env.JSEARCH_API_KEY = "private-test-key";
+  delete process.env.JOOBLE_API_KEY;
   let captured;
   global.fetch = async (url, options) => {
     captured = { url: String(url), options };
@@ -56,5 +58,43 @@ test("healthcare jobs keeps the provider key server-side and normalizes safe res
     global.fetch = previousFetch;
     if (previousKey === undefined) delete process.env.JSEARCH_API_KEY;
     else process.env.JSEARCH_API_KEY = previousKey;
+    if (previousJoobleKey === undefined) delete process.env.JOOBLE_API_KEY;
+    else process.env.JOOBLE_API_KEY = previousJoobleKey;
+  }
+});
+
+test("Jooble works as a second server-side provider and normalizes results", async () => {
+  const previousJSearchKey = process.env.JSEARCH_API_KEY;
+  const previousJoobleKey = process.env.JOOBLE_API_KEY;
+  const previousJoobleBase = process.env.JOOBLE_API_BASE_URL;
+  const previousFetch = global.fetch;
+  delete process.env.JSEARCH_API_KEY;
+  process.env.JOOBLE_API_KEY = "private-jooble-key";
+  process.env.JOOBLE_API_BASE_URL = "https://jooble.org/api";
+  let captured;
+  global.fetch = async (url, options) => {
+    captured = { url: String(url), options };
+    return { ok: true, json: async () => ({ jobs: [
+      { id: 42, title: "Pharmacist", company: "Sharjah Medical Centre", location: "Sharjah, UAE", snippet: "Review prescriptions.", source: "Jooble", link: "https://example.com/jooble-apply", updated: "2026-08-28T00:00:00Z" },
+    ] }) };
+  };
+  try {
+    const result = await invoke({ role: "pharmacist", location: "sharjah" });
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.jobs.length, 1);
+    assert.equal(result.body.jobs[0].publisher, "Jooble");
+    assert.deepEqual(result.body.providers, ["Jooble"]);
+    assert.match(captured.url, /^https:\/\/jooble\.org\/api\/private-jooble-key$/);
+    assert.equal(captured.options.method, "POST");
+    assert.match(captured.options.body, /Sharjah/);
+    assert.doesNotMatch(JSON.stringify(result.body), /private-jooble-key/);
+  } finally {
+    global.fetch = previousFetch;
+    if (previousJSearchKey === undefined) delete process.env.JSEARCH_API_KEY;
+    else process.env.JSEARCH_API_KEY = previousJSearchKey;
+    if (previousJoobleKey === undefined) delete process.env.JOOBLE_API_KEY;
+    else process.env.JOOBLE_API_KEY = previousJoobleKey;
+    if (previousJoobleBase === undefined) delete process.env.JOOBLE_API_BASE_URL;
+    else process.env.JOOBLE_API_BASE_URL = previousJoobleBase;
   }
 });
