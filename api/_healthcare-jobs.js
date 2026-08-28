@@ -54,8 +54,8 @@ const safeUrl = (value) => {
   } catch { return ""; }
 };
 
-const normalizeJob = (job) => ({
-  id: safeText(job.job_id, 300),
+const normalizeJSearchJob = (job) => ({
+  id: `jsearch:${safeText(job.job_id, 280)}`,
   title: safeText(job.job_title, 180),
   employer: safeText(job.employer_name, 140) || "Employer not listed",
   employerLogo: safeUrl(job.employer_logo),
@@ -72,6 +72,70 @@ const normalizeJob = (job) => ({
   maxSalary: Number.isFinite(job.job_max_salary) ? job.job_max_salary : null,
   salaryPeriod: safeText(job.job_salary_period, 30),
 });
+
+const normalizeJoobleJob = (job) => ({
+  id: `jooble:${safeText(String(job.id || ""), 280)}`,
+  title: safeText(job.title, 180),
+  employer: safeText(job.company, 140) || "Employer not listed",
+  employerLogo: "",
+  city: "",
+  state: "",
+  country: "United Arab Emirates",
+  location: safeText(job.location, 160),
+  employmentType: safeText(job.type, 60),
+  description: safeText(job.snippet),
+  applyUrl: safeUrl(job.link),
+  publisher: safeText(job.source, 100) || "Jooble",
+  postedAt: safeText(job.updated, 60),
+  minSalary: null,
+  maxSalary: null,
+  salaryPeriod: safeText(job.salary, 80),
+});
+
+const dedupeKey = (job) => [job.title, job.employer, job.location || job.city]
+  .map((value) => safeText(value, 180).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim())
+  .join(":");
+
+const fetchJSearchJobs = async (roleKey, locationKey) => {
+  if (!process.env.JSEARCH_API_KEY) return { provider: "JSearch", configured: false, jobs: [] };
+  const url = new URL("https://api.openwebninja.com/jsearch/search-v2");
+  url.searchParams.set("query", `${roles[roleKey]} jobs in ${locations[locationKey]}`);
+  url.searchParams.set("country", "ae");
+  url.searchParams.set("language", "en");
+  url.searchParams.set("num_pages", "2");
+  const apiResponse = await fetch(url, {
+    headers: { "x-api-key": process.env.JSEARCH_API_KEY, Accept: "application/json" },
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (!apiResponse.ok) throw new Error(`JSearch:${apiResponse.status}`);
+  const result = await apiResponse.json();
+  const rawJobs = Array.isArray(result.data) ? result.data : Array.isArray(result.data?.jobs) ? result.data.jobs : [];
+  return { provider: "JSearch", configured: true, jobs: rawJobs.map(normalizeJSearchJob) };
+};
+
+const fetchJoobleJobs = async (roleKey, locationKey) => {
+  if (!process.env.JOOBLE_API_KEY) return { provider: "Jooble", configured: false, jobs: [] };
+  const configuredBase = safeText(process.env.JOOBLE_API_BASE_URL, 300) || "https://jooble.org/api";
+  const base = new URL(configuredBase);
+  if (base.protocol !== "https:") throw new Error("Jooble:invalid-base-url");
+  const endpoint = new URL(`${base.toString().replace(/\/+$/, "")}/${encodeURIComponent(process.env.JOOBLE_API_KEY)}`);
+  const apiResponse = await fetch(endpoint, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      keywords: roles[roleKey],
+      location: locations[locationKey],
+      page: "1",
+      ResultOnPage: "50",
+      SearchMode: "1",
+    }),
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (!apiResponse.ok) throw new Error(`Jooble:${apiResponse.status}`);
+  const result = await apiResponse.json();
+  const rawJobs = Array.isArray(result.jobs) ? result.jobs : [];
+  return { provider: "Jooble", configured: true, jobs: rawJobs.map(normalizeJoobleJob) };
+};
 
 export const isRelevantUaeJob = (job, roleKey, locationKey) => {
   const place = [job.location, job.city, job.state, job.country].filter(Boolean).join(" ");
@@ -95,7 +159,7 @@ export async function healthcareJobsHandler(request, response) {
   if (!roles[roleKey] || !locations[locationKey]) {
     return response.status(400).json({ error: "Select a valid healthcare role and UAE location." });
   }
-  if (!process.env.JSEARCH_API_KEY) {
+  if (!process.env.JSEARCH_API_KEY && !process.env.JOOBLE_API_KEY) {
     return response.status(503).json({ error: "The healthcare jobs service is not configured yet." });
   }
 
@@ -106,37 +170,37 @@ export async function healthcareJobsHandler(request, response) {
   }
 
   try {
-    const url = new URL("https://api.openwebninja.com/jsearch/search-v2");
-    url.searchParams.set("query", `${roles[roleKey]} jobs in ${locations[locationKey]}`);
-    url.searchParams.set("country", "ae");
-    url.searchParams.set("language", "en");
-    url.searchParams.set("num_pages", "1");
-
-    const apiResponse = await fetch(url, {
-      headers: { "x-api-key": process.env.JSEARCH_API_KEY, Accept: "application/json" },
-      signal: AbortSignal.timeout(12_000),
-    });
-    if (!apiResponse.ok) {
-      console.error("JSearch response", apiResponse.status);
-      return response.status(apiResponse.status === 429 ? 429 : 502).json({
-        error: apiResponse.status === 429 ? "The job search limit has been reached. Please try again later." : "Live jobs are temporarily unavailable.",
+    const settled = await Promise.allSettled([
+      fetchJSearchJobs(roleKey, locationKey),
+      fetchJoobleJobs(roleKey, locationKey),
+    ]);
+    const successful = settled.filter((item) => item.status === "fulfilled").map((item) => item.value);
+    const configured = successful.filter((item) => item.configured);
+    const failed = settled.filter((item) => item.status === "rejected");
+    failed.forEach((item) => console.error("Healthcare jobs provider failed", item.reason?.message || item.reason));
+    if (!configured.length && failed.length) {
+      const rateLimited = failed.some((item) => /:429$/.test(item.reason?.message || ""));
+      return response.status(rateLimited ? 429 : 502).json({
+        error: rateLimited ? "The job search limit has been reached. Please try again later." : "Live jobs are temporarily unavailable.",
       });
     }
-
-    const result = await apiResponse.json();
     const seen = new Set();
-    const rawJobs = Array.isArray(result.data) ? result.data : Array.isArray(result.data?.jobs) ? result.data.jobs : [];
-    const jobs = rawJobs
-      .map(normalizeJob)
+    const jobs = successful
+      .flatMap((item) => item.jobs)
       .filter((job) => job.title && job.applyUrl)
       .filter((job) => isRelevantUaeJob(job, roleKey, locationKey))
       .filter((job) => {
-        const key = job.id || `${job.title}:${job.employer}:${job.location}`.toLowerCase();
+        const key = dedupeKey(job) || job.id;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
-      });
-    const payload = { jobs, role: roleKey, location: locationKey, fetchedAt: new Date().toISOString() };
+      })
+      .sort((a, b) => (Date.parse(b.postedAt) || 0) - (Date.parse(a.postedAt) || 0));
+    const payload = {
+      jobs, role: roleKey, location: locationKey, fetchedAt: new Date().toISOString(),
+      providers: successful.filter((item) => item.configured).map((item) => item.provider),
+      partial: failed.length > 0,
+    };
     memoryCache.set(cacheKey, { payload, createdAt: Date.now() });
     return response.status(200).json(payload);
   } catch (error) {
