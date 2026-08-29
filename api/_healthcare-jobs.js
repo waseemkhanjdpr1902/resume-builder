@@ -37,8 +37,6 @@ const roleTitleTerms = {
 
 const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer\w*|surgeon\w*|consultant\w*|clinical specialist\w*|paediatric\w*|pediatric\w*|pharmac\w*|pharmacy\w*|dent\w*|orthodont\w*|prosthodont\w*|periodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|radiograph\w*|radiolog\w*|sonograph\w*|imaging techn\w*|laborator\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|caregiver\w*|patient care assistant\w*|respiratory therap\w*|dietitian\w*|nutritionist\w*|optomet\w*|audiolog\w*|paramedic\w*|emergency medical technician\w*|hospital manager\w*|clinic manager\w*|healthcare manager\w*|medical receptionist\w*)\b/i;
 
-// Broad discovery terms intentionally cover the most common clinical and allied-health
-// titles used by UAE employers. Relevance + freshness filtering is still applied later.
 const allRoleSearchTerms = [
   "registered nurse",
   "doctor physician",
@@ -78,9 +76,11 @@ const locationTerms = {
 
 const memoryCache = new Map();
 const CACHE_MS = 10 * 60 * 1000;
-const CACHE_VERSION = "v6-expanded-healthcare-discovery";
+const CACHE_VERSION = "v7-provider-quota-fix";
 const MAX_JOB_AGE_DAYS = 7;
 const FUTURE_TOLERANCE_MS = 6 * 60 * 60 * 1000;
+const JSEARCH_MAX_TERMS = 2;
+const JOOBLE_MAX_TERMS = 3;
 
 const safeText = (value, max = 5000) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeUrl = (value) => {
@@ -135,6 +135,7 @@ const dedupeKey = (job) => [job.title, job.employer, job.location || job.city]
   .join(":");
 
 const searchTermsForRole = (roleKey) => roleKey === "all" ? allRoleSearchTerms : (roleSearchTerms[roleKey] || [roles[roleKey]]);
+const limitedSearchTerms = (roleKey, maxTerms) => searchTermsForRole(roleKey).slice(0, maxTerms);
 
 export const isFreshJob = (job, now = Date.now()) => {
   if (!job.postedAt) return false;
@@ -149,7 +150,7 @@ const fetchJSearchQuery = async (term, locationKey) => {
   url.searchParams.set("query", `${term} jobs in ${locations[locationKey]}`);
   url.searchParams.set("country", "ae");
   url.searchParams.set("language", "en");
-  url.searchParams.set("num_pages", "2");
+  url.searchParams.set("num_pages", "1");
   url.searchParams.set("date_posted", "week");
   const apiResponse = await fetch(url, { headers: { "x-api-key": process.env.JSEARCH_API_KEY, Accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
   if (!apiResponse.ok) throw new Error(`JSearch:${apiResponse.status}`);
@@ -160,14 +161,17 @@ const fetchJSearchQuery = async (term, locationKey) => {
 
 const fetchJSearchJobs = async (roleKey, locationKey) => {
   if (!process.env.JSEARCH_API_KEY) return { provider: "JSearch", configured: false, jobs: [] };
-  const queryResults = await Promise.allSettled(searchTermsForRole(roleKey).map((term) => fetchJSearchQuery(term, locationKey)));
+  const queryResults = await Promise.allSettled(limitedSearchTerms(roleKey, JSEARCH_MAX_TERMS).map((term) => fetchJSearchQuery(term, locationKey)));
   const jobs = queryResults.filter((item) => item.status === "fulfilled").flatMap((item) => item.value);
   if (!jobs.length && queryResults.some((item) => item.status === "rejected")) throw queryResults.find((item) => item.status === "rejected").reason;
   return { provider: "JSearch", configured: true, jobs };
 };
 
 const fetchJoobleQuery = async (term, locationKey) => {
-  const configuredBase = safeText(process.env.JOOBLE_API_BASE_URL, 300) || "https://jooble.org/api";
+  const requestedBase = safeText(process.env.JOOBLE_API_BASE_URL, 300) || "https://ae.jooble.org/api";
+  const configuredBase = /^https:\/\/(?:www\.)?jooble\.org\/api\/?$/i.test(requestedBase)
+    ? "https://ae.jooble.org/api"
+    : requestedBase;
   const base = new URL(configuredBase);
   if (base.protocol !== "https:") throw new Error("Jooble:invalid-base-url");
   const endpoint = new URL(`${base.toString().replace(/\/+$/, "")}/${encodeURIComponent(process.env.JOOBLE_API_KEY)}`);
@@ -179,15 +183,12 @@ const fetchJoobleQuery = async (term, locationKey) => {
 
 const fetchJoobleJobs = async (roleKey, locationKey) => {
   if (!process.env.JOOBLE_API_KEY) return { provider: "Jooble", configured: false, jobs: [] };
-  const queryResults = await Promise.allSettled(searchTermsForRole(roleKey).map((term) => fetchJoobleQuery(term, locationKey)));
+  const queryResults = await Promise.allSettled(limitedSearchTerms(roleKey, JOOBLE_MAX_TERMS).map((term) => fetchJoobleQuery(term, locationKey)));
   const jobs = queryResults.filter((item) => item.status === "fulfilled").flatMap((item) => item.value);
   if (!jobs.length && queryResults.some((item) => item.status === "rejected")) throw queryResults.find((item) => item.status === "rejected").reason;
   return { provider: "Jooble", configured: true, jobs };
 };
 
-// Adzuna's standard country endpoint currently returns 404 for UAE (ae). Do not
-// spend requests against an unsupported endpoint or mark the whole feed partial.
-// Keep the credentials server-side for future use if Adzuna adds UAE coverage.
 const fetchAdzunaJobs = async () => ({ provider: "Adzuna", configured: false, jobs: [] });
 
 export const isRelevantUaeJob = (job, roleKey, locationKey) => {
@@ -225,7 +226,16 @@ export async function healthcareJobsHandler(request, response) {
     failed.forEach((item) => console.error("Healthcare jobs provider failed", item.reason?.message || item.reason));
     if (!configured.length && failed.length) {
       const rateLimited = failed.some((item) => /:429$/.test(item.reason?.message || ""));
-      return response.status(rateLimited ? 429 : 502).json({ jobs: [], staleFallbackUsed: false, error: rateLimited ? "Live job providers are temporarily rate-limited. No older jobs are being shown." : "Live jobs are temporarily unavailable. No stale jobs are being shown." });
+      const joobleRegionalKey = failed.some((item) => /Jooble:403$/.test(item.reason?.message || ""));
+      return response.status(rateLimited ? 429 : 502).json({
+        jobs: [],
+        staleFallbackUsed: false,
+        error: joobleRegionalKey
+          ? "Jooble now requires a UAE-specific API key for ae.jooble.org. Update JOOBLE_API_KEY with the UAE key."
+          : rateLimited
+            ? "Live job providers are temporarily rate-limited. No older jobs are being shown."
+            : "Live jobs are temporarily unavailable. No stale jobs are being shown."
+      });
     }
 
     const seen = new Set();
@@ -242,7 +252,7 @@ export async function healthcareJobsHandler(request, response) {
       providers: successful.filter((item) => item.configured).map((item) => item.provider),
       providerErrors: failed.map((item) => safeText(item.reason?.message || "Provider error", 120)),
       partial: failed.length > 0,
-      discoveryTerms: searchTermsForRole(roleKey).length,
+      discoveryTerms: limitedSearchTerms(roleKey, Math.max(JSEARCH_MAX_TERMS, JOOBLE_MAX_TERMS)).length,
     };
     memoryCache.set(cacheKey, { payload, createdAt: Date.now() });
     return response.status(200).json(payload);
