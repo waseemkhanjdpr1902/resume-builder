@@ -38,6 +38,7 @@ const roleTitleTerms = {
 const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer\w*|surgeon\w*|consultant\w*|clinical specialist\w*|paediatric\w*|pediatric\w*|pharmac\w*|pharmacy\w*|dent\w*|orthodont\w*|prosthodont\w*|periodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|radiograph\w*|radiolog\w*|sonograph\w*|imaging techn\w*|laborator\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|caregiver\w*|patient care assistant\w*|respiratory therap\w*|dietitian\w*|nutritionist\w*|optomet\w*|audiolog\w*|paramedic\w*|emergency medical technician\w*|hospital manager\w*|clinic manager\w*|healthcare manager\w*|medical receptionist\w*)\b/i;
 
 const allRoleSearchTerms = [
+  "healthcare",
   "registered nurse",
   "doctor physician",
   "pharmacist",
@@ -47,11 +48,6 @@ const allRoleSearchTerms = [
   "radiographer radiology technician",
   "medical coder",
   "healthcare assistant nursing assistant",
-  "occupational therapist",
-  "respiratory therapist",
-  "dietitian nutritionist",
-  "paramedic emergency medical technician",
-  "medical receptionist clinic manager",
 ];
 
 const roleSearchTerms = {
@@ -76,11 +72,11 @@ const locationTerms = {
 
 const memoryCache = new Map();
 const CACHE_MS = 10 * 60 * 1000;
-const CACHE_VERSION = "v7-provider-quota-fix";
+const CACHE_VERSION = "v8-jooble-fallback";
 const MAX_JOB_AGE_DAYS = 7;
 const FUTURE_TOLERANCE_MS = 6 * 60 * 60 * 1000;
-const JSEARCH_MAX_TERMS = 2;
-const JOOBLE_MAX_TERMS = 3;
+const JSEARCH_MAX_TERMS = 1;
+const JOOBLE_MAX_TERMS = 4;
 
 const safeText = (value, max = 5000) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeUrl = (value) => {
@@ -168,14 +164,16 @@ const fetchJSearchJobs = async (roleKey, locationKey) => {
 };
 
 const fetchJoobleQuery = async (term, locationKey) => {
-  const requestedBase = safeText(process.env.JOOBLE_API_BASE_URL, 300) || "https://ae.jooble.org/api";
-  const configuredBase = /^https:\/\/(?:www\.)?jooble\.org\/api\/?$/i.test(requestedBase)
-    ? "https://ae.jooble.org/api"
-    : requestedBase;
+  const configuredBase = safeText(process.env.JOOBLE_API_BASE_URL, 300) || "https://jooble.org/api";
   const base = new URL(configuredBase);
   if (base.protocol !== "https:") throw new Error("Jooble:invalid-base-url");
   const endpoint = new URL(`${base.toString().replace(/\/+$/, "")}/${encodeURIComponent(process.env.JOOBLE_API_KEY)}`);
-  const apiResponse = await fetch(endpoint, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ keywords: term, location: locations[locationKey], page: "1", ResultOnPage: "50", SearchMode: "1" }), signal: AbortSignal.timeout(12_000) });
+  const apiResponse = await fetch(endpoint, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ keywords: term, location: locations[locationKey], page: "1", ResultOnPage: "50", SearchMode: "1" }),
+    signal: AbortSignal.timeout(12_000),
+  });
   if (!apiResponse.ok) throw new Error(`Jooble:${apiResponse.status}`);
   const result = await apiResponse.json();
   return (Array.isArray(result.jobs) ? result.jobs : []).map(normalizeJoobleJob);
@@ -219,22 +217,19 @@ export async function healthcareJobsHandler(request, response) {
   if (cached && Date.now() - cached.createdAt < CACHE_MS) return response.status(200).json({ ...cached.payload, cached: true, cacheAgeSeconds: Math.floor((Date.now() - cached.createdAt) / 1000) });
 
   try {
-    const settled = await Promise.allSettled([fetchJSearchJobs(roleKey, locationKey), fetchJoobleJobs(roleKey, locationKey), fetchAdzunaJobs(roleKey, locationKey)]);
+    const settled = await Promise.allSettled([fetchJoobleJobs(roleKey, locationKey), fetchJSearchJobs(roleKey, locationKey), fetchAdzunaJobs(roleKey, locationKey)]);
     const successful = settled.filter((item) => item.status === "fulfilled").map((item) => item.value);
     const configured = successful.filter((item) => item.configured);
     const failed = settled.filter((item) => item.status === "rejected");
     failed.forEach((item) => console.error("Healthcare jobs provider failed", item.reason?.message || item.reason));
     if (!configured.length && failed.length) {
       const rateLimited = failed.some((item) => /:429$/.test(item.reason?.message || ""));
-      const joobleRegionalKey = failed.some((item) => /Jooble:403$/.test(item.reason?.message || ""));
       return response.status(rateLimited ? 429 : 502).json({
         jobs: [],
         staleFallbackUsed: false,
-        error: joobleRegionalKey
-          ? "Jooble now requires a UAE-specific API key for ae.jooble.org. Update JOOBLE_API_KEY with the UAE key."
-          : rateLimited
-            ? "Live job providers are temporarily rate-limited. No older jobs are being shown."
-            : "Live jobs are temporarily unavailable. No stale jobs are being shown."
+        error: rateLimited
+          ? "Live job providers are temporarily rate-limited. Please try again shortly."
+          : "Live jobs are temporarily unavailable. Please try again shortly.",
       });
     }
 
@@ -247,17 +242,21 @@ export async function healthcareJobsHandler(request, response) {
       .sort((a, b) => Date.parse(b.postedAt) - Date.parse(a.postedAt));
 
     const payload = {
-      jobs, role: roleKey, location: locationKey, fetchedAt: new Date().toISOString(), staleFallbackUsed: false,
+      jobs,
+      role: roleKey,
+      location: locationKey,
+      fetchedAt: new Date().toISOString(),
+      staleFallbackUsed: false,
       freshnessPolicy: { maxAgeDays: MAX_JOB_AGE_DAYS, missingDatesExcluded: true, invalidDatesExcluded: true, staleCacheFallback: false },
       providers: successful.filter((item) => item.configured).map((item) => item.provider),
       providerErrors: failed.map((item) => safeText(item.reason?.message || "Provider error", 120)),
       partial: failed.length > 0,
-      discoveryTerms: limitedSearchTerms(roleKey, Math.max(JSEARCH_MAX_TERMS, JOOBLE_MAX_TERMS)).length,
+      discoveryTerms: limitedSearchTerms(roleKey, JOOBLE_MAX_TERMS).length,
     };
     memoryCache.set(cacheKey, { payload, createdAt: Date.now() });
     return response.status(200).json(payload);
   } catch (error) {
     console.error("Healthcare job search failed", error?.message || error);
-    return response.status(502).json({ jobs: [], staleFallbackUsed: false, error: "Live jobs are temporarily unavailable. No stale jobs are being shown." });
+    return response.status(502).json({ jobs: [], staleFallbackUsed: false, error: "Live jobs are temporarily unavailable. Please try again shortly." });
   }
 }
