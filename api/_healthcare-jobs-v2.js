@@ -24,9 +24,11 @@ const roleQueries = {
   assistant: "healthcare assistant jobs",
 };
 
+const doctorSpecialtyTerms = /\b(internal medicine|family medicine|general medicine|emergency medicine|cardiolog\w*|dermatolog\w*|neurolog\w*|urolog\w*|oncolog\w*|gastroenterolog\w*|endocrinolog\w*|nephrolog\w*|pulmonolog\w*|rheumatolog\w*|hematolog\w*|haematolog\w*|psychiatr\w*|pediatric\w*|paediatric\w*|obstetric\w*|gynecolog\w*|gynaecolog\w*|anesthes\w*|anaesthes\w*|orthopedic\w*|orthopaedic\w*|ophthalmolog\w*|ent\b|otolaryngolog\w*|hospitalist\w*|intensivist\w*|radiologist\w*|pathologist\w*)\b/i;
+
 const roleTitleTerms = {
   nurse: /\b(nurs\w*|midwi\w*|clinical facilitator)\b/i,
-  doctor: /\b(doctor\w*|physician\w*|medical officer|surgeon\w*|consultant\w*|specialist\w*|pediatric\w*|paediatric\w*)\b/i,
+  doctor: /\b(doctor\w*|physician\w*|medical officer|surgeon\w*|pediatric\w*|paediatric\w*)\b/i,
   pharmacist: /\b(pharmacist\w*|pharmacy technician\w*|pharmacy assistant\w*)\b/i,
   dentist: /\b(dentist\w*|dental surgeon\w*|dental hygienist\w*|dental assistant\w*|orthodont\w*)\b/i,
   physiotherapist: /\b(physiotherap\w*|physical therap\w*)\b/i,
@@ -36,7 +38,7 @@ const roleTitleTerms = {
   assistant: /\b(healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|patient care assistant\w*|caregiver\w*)\b/i,
 };
 
-const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer|surgeon\w*|consultant\w*|specialist\w*|pharmacist\w*|pharmacy technician\w*|pharmacy assistant\w*|dentist\w*|dental surgeon\w*|dental hygienist\w*|dental assistant\w*|orthodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|respiratory therap\w*|radiograph\w*|radiology techn\w*|radiologic techn\w*|sonograph\w*|medical imaging\w*|medical laboratory\w*|laboratory techn\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|patient care assistant\w*|caregiver\w*|dietitian\w*|nutritionist\w*|optometrist\w*|audiologist\w*|paramedic\w*|emergency medical technician\w*|medical receptionist\w*|medical secretary\w*|biomedical engineer\w*)\b/i;
+const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer|surgeon\w*|pharmacist\w*|pharmacy technician\w*|pharmacy assistant\w*|dentist\w*|dental surgeon\w*|dental hygienist\w*|dental assistant\w*|orthodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|respiratory therap\w*|radiograph\w*|radiology techn\w*|radiologic techn\w*|sonograph\w*|medical imaging\w*|medical laboratory\w*|laboratory techn\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|patient care assistant\w*|caregiver\w*|dietitian\w*|nutritionist\w*|optometrist\w*|audiologist\w*|paramedic\w*|emergency medical technician\w*|medical receptionist\w*|medical secretary\w*|biomedical engineer\w*)\b/i;
 
 const uaeTerms = /\b(united arab emirates|uae|dubai|abu dhabi|sharjah|ajman|al ain|ras al khaimah|fujairah|umm al quwain)\b/i;
 const foreignTerms = /\b(saudi arabia|oman|qatar|bahrain|kuwait|india|pakistan|united kingdom|united states|canada|australia)\b/i;
@@ -53,7 +55,7 @@ const locationTerms = {
 const memoryCache = new Map();
 const CACHE_MS = 15 * 60 * 1000;
 const MAX_AGE_DAYS = 45;
-const CACHE_VERSION = "v3-serp-singlepage-strict-title";
+const CACHE_VERSION = "v4-clinical-title-filter";
 
 const clean = (value, max = 5000) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeUrl = (value) => {
@@ -129,13 +131,18 @@ function isFresh(job) {
   return !Number.isFinite(ts) || Date.now() - ts <= MAX_AGE_DAYS * 86400000;
 }
 
+function hasDoctorTitle(title) {
+  return roleTitleTerms.doctor.test(title) || doctorSpecialtyTerms.test(title);
+}
+
 function isRelevant(job, role, location) {
   const place = `${job.location || ""} ${job.city || ""} ${job.state || ""} ${job.country || ""}`;
   const title = job.title || "";
   if (place && foreignTerms.test(place) && !uaeTerms.test(place)) return false;
   if (location === "uae" && place && !uaeTerms.test(place)) return false;
   if (location !== "uae" && locationTerms[location] && !locationTerms[location].test(place)) return false;
-  if (role === "all") return healthcareTitleTerms.test(title);
+  if (role === "all") return healthcareTitleTerms.test(title) || hasDoctorTitle(title);
+  if (role === "doctor") return hasDoctorTitle(title);
   return roleTitleTerms[role] ? roleTitleTerms[role].test(title) : false;
 }
 
