@@ -35,9 +35,9 @@ const roleTitleTerms = {
   assistant: /\b(healthcare assistant|health care assistant|nursing assistant|caregiver|patient care assistant)\w*/i,
 };
 
-const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer\w*|surgeon\w*|consultant\w*|specialist\w*|paediatric\w*|pediatric\w*|pharmac\w*|pharmacy\w*|dent\w*|orthodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|radiograph\w*|radiolog\w*|sonograph\w*|imaging\w*|laborator\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare assistant\w*|health care assistant\w*|nursing assistant\w*|caregiver\w*|patient care assistant\w*|respiratory therap\w*|dietitian\w*|nutritionist\w*|optomet\w*|audiolog\w*|paramedic\w*|emergency medical technician\w*|hospital\w*|clinic\w*|medical receptionist\w*)\b/i;
+const healthcareTitleTerms = /\b(nurs\w*|midwi\w*|doctor\w*|physician\w*|medical officer\w*|surgeon\w*|consultant\w*|specialist\w*|paediatric\w*|pediatric\w*|pharmac\w*|pharmacy\w*|dent\w*|orthodont\w*|physiotherap\w*|physical therap\w*|occupational therap\w*|speech therap\w*|radiograph\w*|radiolog\w*|sonograph\w*|imaging\w*|laborator\w*|lab techn\w*|patholog\w*|phlebotom\w*|medical cod\w*|clinical cod\w*|medical bill\w*|healthcare\w*|health care\w*|nursing assistant\w*|caregiver\w*|patient care\w*|respiratory therap\w*|dietitian\w*|nutritionist\w*|optomet\w*|audiolog\w*|paramedic\w*|emergency medical technician\w*|hospital\w*|clinic\w*|medical receptionist\w*|medical secretary\w*|clinical\w*|patient\w*|biomedical\w*|medical techn\w*|dental assistant\w*)\b/i;
 
-const allRoleSearchTerms = ["nurse", "doctor", "pharmacist", "medical laboratory"];
+const allRoleSearchTerms = ["nurse", "doctor", "pharmacist", "medical laboratory", "physiotherapist", "radiographer", "medical coder", "healthcare assistant"];
 const roleSearchTerms = {
   nurse: ["registered nurse", "staff nurse", "nurse"],
   doctor: ["doctor", "physician", "medical officer"],
@@ -65,13 +65,14 @@ const locationTerms = {
 const memoryCache = new Map();
 const providerCooldowns = new Map();
 const CACHE_MS = 30 * 60 * 1000;
-const CACHE_VERSION = "v17-serpapi-fallback";
+const CACHE_VERSION = "v18-serpapi-pagination";
 const MAX_JOB_AGE_DAYS = 30;
 const FUTURE_TOLERANCE_MS = 6 * 60 * 60 * 1000;
-const JOOBLE_MAX_TERMS = 4;
+const JOOBLE_MAX_TERMS = 6;
 const JSEARCH_MAX_TERMS = 1;
 const PROVIDER_COOLDOWN_MS = 45 * 60 * 1000;
-const SERPAPI_FALLBACK_THRESHOLD = 8;
+const SERPAPI_FALLBACK_THRESHOLD = 20;
+const SERPAPI_MAX_PAGES = 3;
 
 const safeText = (value, max = 5000) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeUrl = (value) => {
@@ -163,7 +164,7 @@ const normalizeSerpApiJob = (job) => {
     employerLogo: safeUrl(job.thumbnail),
     city: "",
     state: "",
-    country: "United Arab Emirates",
+    country: "",
     location: safeText(job.location, 160),
     employmentType: safeText(job.detected_extensions?.schedule_type, 60),
     description: safeText(job.description),
@@ -259,14 +260,23 @@ async function fetchJSearchJobs(roleKey, locationKey) {
 async function fetchSerpApiJobs(roleKey, locationKey) {
   if (!process.env.SERPAPI_API_KEY) return { provider: "SerpApi", configured: false, jobs: [] };
   if (isCoolingDown("SerpApi")) return { provider: "SerpApi", configured: true, jobs: [], cooldown: true };
-  const term = roleKey === "all" ? "healthcare" : roles[roleKey];
-  const url = new URL("https://serpapi.com/search.json");
-  url.searchParams.set("engine", "google_jobs");
-  url.searchParams.set("q", `${term} jobs`);
-  url.searchParams.set("location", locations[locationKey]);
-  url.searchParams.set("hl", "en");
-  url.searchParams.set("api_key", process.env.SERPAPI_API_KEY);
-  try {
+
+  const query = roleKey === "all"
+    ? "healthcare OR nurse OR doctor OR pharmacist OR physiotherapist OR laboratory OR radiology OR medical jobs"
+    : `${roles[roleKey]} jobs`;
+  const out = [];
+  let nextPageToken = "";
+
+  for (let page = 0; page < SERPAPI_MAX_PAGES; page += 1) {
+    const url = new URL("https://serpapi.com/search.json");
+    url.searchParams.set("engine", "google_jobs");
+    url.searchParams.set("q", query);
+    url.searchParams.set("location", locations[locationKey]);
+    url.searchParams.set("gl", "ae");
+    url.searchParams.set("hl", "en");
+    url.searchParams.set("api_key", process.env.SERPAPI_API_KEY);
+    if (nextPageToken) url.searchParams.set("next_page_token", nextPageToken);
+
     const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(12000) });
     if (!response.ok) {
       if (response.status === 429 || response.status >= 500) setCooldown("SerpApi");
@@ -274,18 +284,22 @@ async function fetchSerpApiJobs(roleKey, locationKey) {
     }
     const data = await response.json();
     if (data.error) throw new Error(`SerpApi:${safeText(data.error, 120)}`);
-    return { provider: "SerpApi", configured: true, jobs: (Array.isArray(data.jobs_results) ? data.jobs_results : []).map(normalizeSerpApiJob) };
-  } catch (error) {
-    throw error;
+    const pageJobs = Array.isArray(data.jobs_results) ? data.jobs_results : [];
+    out.push(...pageJobs.map(normalizeSerpApiJob));
+    nextPageToken = safeText(data.serpapi_pagination?.next_page_token, 500);
+    if (!nextPageToken || !pageJobs.length) break;
   }
+
+  return { provider: "SerpApi", configured: true, jobs: out };
 }
 
 export const isRelevantUaeJob = (job, roleKey, locationKey) => {
   const place = [job.location, job.city, job.state, job.country].filter(Boolean).join(" ");
   const fullText = `${job.title} ${place} ${job.description || ""}`;
   if (place && foreignCountry.test(place) && !uaeLocation.test(place)) return false;
+  if (locationKey === "uae" && place && !uaeLocation.test(place)) return false;
   if (locationKey !== "uae" && locationTerms[locationKey] && !locationTerms[locationKey].test(place)) return false;
-  if (roleKey === "all" && !healthcareTitleTerms.test(job.title || "")) return false;
+  if (roleKey === "all" && !healthcareTitleTerms.test(fullText)) return false;
   if (roleKey !== "all" && roleTitleTerms[roleKey] && !roleTitleTerms[roleKey].test(fullText)) return false;
   return true;
 };
