@@ -1,14 +1,14 @@
 import { secureJsonPost, requireUser } from "./_security.js";
 import { runAI, clean } from "./_ai.js";
 import { canUseCareerTool, recordCareerToolUse } from "./_freemium.js";
-import { healthcareJobsHandler } from "./_healthcare-jobs.js";
+import { healthcareJobsHandlerV2 } from "./_healthcare-jobs-v2.js";
 
 const system = `You are ResuAIBuilder's healthcare recruitment specialist. Compare a candidate CV with a target job description. Use only facts explicitly present in the CV. Never invent experience, qualifications, certifications, licences, employers, achievements or metrics. Return JSON only.`;
 const schema = `{"overallScore":0,"breakdown":{"experienceMatch":0,"skillsMatch":0,"qualificationMatch":0,"keywordsMatch":0,"jobTitleMatch":0,"certificationMatch":0},"goodMatchReasons":[],"missingKeywords":[],"missingSkills":[],"potentialGaps":[],"atsRisks":[],"recommendedImprovements":[],"tailoringNotes":[]}`;
 const valid = data => data && Number.isFinite(Number(data.overallScore)) && Number(data.overallScore) >= 0 && Number(data.overallScore) <= 100 && data.breakdown && Object.values(data.breakdown).every(v => Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100) && ["goodMatchReasons","missingKeywords","missingSkills","potentialGaps","atsRisks","recommendedImprovements","tailoringNotes"].every(k => Array.isArray(data[k]));
 
 export default async function handler(request, response) {
-  if (request.method === "GET") return healthcareJobsHandler(request, response);
+  if (request.method === "GET") return healthcareJobsHandlerV2(request, response);
   if (!secureJsonPost(request, response, 70000)) return;
   const user = await requireUser(request, response);
   if (!user) return;
