@@ -3,10 +3,8 @@ import PaymentButton from "./PaymentButton";
 import { Link } from "react-router-dom";
 
 const choices = [
-  { id: "career_early", name: "Early Career", price: "₹399", note: "60 days unlimited access" },
-  { id: "career_experienced", name: "Experienced", price: "₹699", note: "180 days · best value", featured: true },
-  { id: "career_leadership", name: "Leadership", price: "₹999", note: "365 days unlimited access" },
-  { id: "lifetime", name: "Lifetime", price: "₹2,499", note: "Founding one-time offer" },
+  { id: "career_experienced", name: "Career Pro", price: "₹699", note: "180 days unlimited access", featured: true },
+  { id: "career_leadership", name: "Career Elite", price: "₹999", note: "365 days unlimited access" },
 ];
 
 export default function DownloadPaywall({ onClose, onPaid, feature = "download", title, message }) {
