@@ -23,14 +23,18 @@
   <meta name="twitter:description" content="Build an ATS-friendly healthcare CV for global roles." />
   <meta name="theme-color" content="#0f766e" />
   <title>Healthcare ResuAIBuilder — Global ATS CV Platform</title>
-  <!-- Load consent management before analytics so regional consent rules apply. -->
-  <script src="https://app.secureprivacy.ai/script/6a155c8e6a5afce30b7812f7.js"></script>
-  <!-- GA4 is injected at build time from the public Vercel variable. Loading it in
-       the shared head makes the tag discoverable on every route. -->
+  <!-- First-party consent mode avoids depending on an external CMP account. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-W4HNT86SGN"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    var analyticsConsent = localStorage.getItem('resuai_analytics_consent');
+    window.gtag('consent', 'default', {
+      analytics_storage: analyticsConsent === 'granted' ? 'granted' : 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
     window.gtag('js', new Date());
     window.gtag('config', 'G-W4HNT86SGN', {
       send_page_view: false,
