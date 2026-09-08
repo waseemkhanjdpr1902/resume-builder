@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-const measurementId = String(import.meta.env.VITE_GA_MEASUREMENT_ID || "").trim();
+// A GA4 measurement ID is public. Keep the Vercel variable configurable while
+// ensuring production analytics cannot silently compile to an empty value.
+const measurementId = String(import.meta.env.VITE_GA_MEASUREMENT_ID || "G-W4HNT86SGN").trim();
 
 export default function Analytics() {
   const location = useLocation();
