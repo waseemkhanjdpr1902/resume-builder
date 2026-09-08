@@ -23,8 +23,20 @@
   <meta name="twitter:description" content="Build an ATS-friendly healthcare CV for global roles." />
   <meta name="theme-color" content="#0f766e" />
   <title>Healthcare ResuAIBuilder — Global ATS CV Platform</title>
-  <!-- Secure Privacy consent management; this shared head is used by every route. -->
+  <!-- Load consent management before analytics so regional consent rules apply. -->
   <script src="https://app.secureprivacy.ai/script/6a155c8e6a5afce30b7812f7.js"></script>
+  <!-- GA4 is injected at build time from the public Vercel variable. Loading it in
+       the shared head makes the tag discoverable on every route. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', '%VITE_GA_MEASUREMENT_ID%', {
+      send_page_view: false,
+      anonymize_ip: true
+    });
+  </script>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.resuaibuilder.com/#organization","name":"ResuAIBuilder","url":"https://www.resuaibuilder.com"},{"@type":"WebApplication","name":"Healthcare ResuAIBuilder","url":"https://www.resuaibuilder.com","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"AI-assisted ATS CV builder for healthcare professionals.","publisher":{"@id":"https://www.resuaibuilder.com/#organization"}},{"@type":"WebSite","name":"ResuAIBuilder","url":"https://www.resuaibuilder.com"}]}</script>
   <style>
     #preloader {
