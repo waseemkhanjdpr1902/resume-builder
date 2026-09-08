@@ -4,7 +4,7 @@ import { requireUser, secureJsonPost } from "./_security.js";
 import { createClient } from "@supabase/supabase-js";
 
 const accessSeconds = { monthly: 30 * 86400, annual: 365 * 86400, lifetime: null, career_early: 60 * 86400, career_experienced: 180 * 86400, career_leadership: 365 * 86400 };
-const planAmounts = { monthly: 19900, annual: 99900, lifetime: 249900, career_early: 39900, career_experienced: 69900, career_leadership: 99900 };
+const planAmounts = { monthly: 19900, annual: 99900, lifetime: 249900, career_early: 39900, career_experienced: 99900, career_leadership: 199900 };
 const recordPlan = { career_early: "monthly", career_experienced: "annual", career_leadership: "annual" };
 const encode = value => Buffer.from(JSON.stringify(value)).toString("base64url");
 const sign = (value, secret) => crypto.createHmac("sha256", secret).update(value).digest("base64url");
