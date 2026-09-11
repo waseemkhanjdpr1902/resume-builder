@@ -299,7 +299,7 @@ export const isRelevantUaeJob = (job, roleKey, locationKey) => {
   if (place && foreignCountry.test(place) && !uaeLocation.test(place)) return false;
   if (locationKey === "uae" && place && !uaeLocation.test(place)) return false;
   if (locationKey !== "uae" && locationTerms[locationKey] && !locationTerms[locationKey].test(place)) return false;
-  if (roleKey === "all" && !healthcareTitleTerms.test(fullText)) return false;
+  if (roleKey === "all" && !healthcareTitleTerms.test(job.title || "")) return false;
   if (roleKey !== "all" && roleTitleTerms[roleKey] && !roleTitleTerms[roleKey].test(fullText)) return false;
   return true;
 };
