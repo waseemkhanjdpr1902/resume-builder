@@ -190,7 +190,7 @@ export const isFreshJob = (job, now = Date.now()) => {
   if (!job.postedAt) return true;
   const posted = Date.parse(job.postedAt);
   if (!Number.isFinite(posted)) return true;
-  if (posted > now + FUTURE_TOLERANCE_MS) return false;
+  if (posted > now + FUTURE_TOLERANCE_MS) return true;
   return now - posted <= MAX_JOB_AGE_DAYS * 86400000;
 };
 
